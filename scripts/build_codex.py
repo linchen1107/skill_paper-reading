@@ -207,8 +207,8 @@ def main() -> None:
     shutil.copytree(ROOT / "templates" / "katex", reading / "templates" / "katex", dirs_exist_ok=True)
     sources = reading / "references"
     sources.mkdir(exist_ok=True)
-    shutil.copy2(ROOT / "skills" / "reading" / "references" / "sources.md",
-                 sources / "sources.md")
+    for ref in ("sources.md", "cold-read.md"):
+        shutil.copy2(ROOT / "skills" / "reading" / "references" / ref, sources / ref)
 
     presentation = TARGET / "paper-reading-presentation"
     (presentation / "scripts").mkdir(exist_ok=True)

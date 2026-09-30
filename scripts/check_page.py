@@ -20,7 +20,9 @@ of the paper is a screenshot instead of its fig<N>-real file, when the key
 formulas break their rules (none, more than 5, outside a knowledge point, before
 its demo, without a plain sentence whose coloured words match the formula),
 when a display formula appears outside the knowledge points and the appendix,
-when the formula map is not in the appendix, when no
+when the formula map is not in the appendix, when a registered term is used before it is
+explained or capitalised jargon in the storyline is not registered, when the latest cold
+read (_work/verify/cold_read.md) is missing, older than index.html or lists anything, when no
 section is marked data-traditional="1",
 a map entry has no section, or the text contains unconfirmed wording
 (尚未確認, 待驗證, 還沒確認), which belongs in the paper notes instead.
@@ -170,6 +172,30 @@ def main(topic_dir):
     if not res.get("overviewInAppendix", True):
         problems.append("公式關係圖應放在附錄（#appendix），不要放在頁首")
     print(f"公式：核心 {len(keys)} 個（上限 5）；附錄 {f.get('sections', 0)} 節、關係圖 {f.get('mapNodes', 0)} 個方塊、符號 {f.get('symbols', 0)} 個")
+    t = res.get("terms", {})
+    if not t.get("count"):
+        problems.append("沒有名詞表：在 demos.js 用 PR.terms({...}) 列出本頁的專有名詞，每個附一句白話")
+    for x in t.get("late", []):
+        problems.append(f"「{x['term']}」在解釋之前就出現了：…{x['context']}…")
+    for k in t.get("notExplained", []):
+        problems.append(f"「{k}」在頁面上用到，但沒有在第一次出現時用 <dfn data-term> 解釋")
+    for k in t.get("dfnNotListed", []):
+        problems.append(f"<dfn data-term=\"{k}\"> 不在名詞表裡")
+    if t.get("unlisted"):
+        problems.append("開頭與故事線用了沒列入名詞表的術語：" + "、".join(t["unlisted"][:30]))
+    (work / "verify" / "reading_text.txt").write_text(res.get("readingText", ""), encoding="utf-8")
+    cold = work / "verify" / "cold_read.md"
+    if not cold.exists():
+        problems.append("冷讀測試沒有執行：依 references/cold-read.md 派一個不看論文的讀者讀 _work/verify/reading_text.txt")
+    elif cold.stat().st_mtime < page.stat().st_mtime:
+        problems.append("index.html 在最後一次冷讀測試之後又改過；請再做一輪冷讀測試")
+    else:
+        text = cold.read_text(encoding="utf-8")
+        part = text.split("## 看不懂的地方", 1)[-1].split("\n## ", 1)[0]
+        items = [ln for ln in part.splitlines() if ln.strip().startswith("- ")]
+        if items:
+            problems.append(f"冷讀測試還有 {len(items)} 處看不懂（{cold}）")
+    print(f"名詞：{t.get('count', 0)} 個；冷讀文字 -> {work / 'verify' / 'reading_text.txt'}")
     figs = res.get("figures", [])
     for fg in figs:
         if not fg["ok"]:

@@ -9,12 +9,21 @@ A paper report is not reading slides aloud; it shows your understanding of the p
 
 Every part must link to the others: **difficulty → why the traditional approach is not enough → the paper's method → knowledge points → demos → back to the original difficulty.** Every entry on the knowledge-point map links to its source location in the paper and to its section.
 
+## Who reads the page
+
+**The reader is intelligent but knows nothing about this field**, for example a graduate student from another lab. The writer has just read 20 papers and can no longer see which words and steps a newcomer lacks, so this is not left to the writer's judgement: every term is registered and checked, and a reader who has only the page tests it (the cold read, [references/cold-read.md](references/cold-read.md)).
+
+- **Every technical term is explained where it first appears in reading order**, in the same sentence, in plain words: names of models, datasets and methods, abbreviations, and English terms. List them in `demos.js` with `PR.terms({'hidden state': '模型讀到每個字時，內部產生的一長串數字。', …})`, and write the first use as `<dfn data-term="hidden state">hidden state</dfn>`; later uses show the explanation on hover. A term the storyline does not need is left out of the storyline, not explained.
+- **Every number has a scale or a comparison**: what is good, what is chance, what the traditional approach gets (for example 「AUC 0.65；0.5 等於亂猜，1 等於全對」).
+- **Nothing is referred to before it is introduced.** A sentence that needs a later section either moves after it or says the needed idea in one plain sentence.
+- **The page opens without jargon**: 3 to 4 sentences on what the paper wants to solve, why it matters, and its idea in everyday words.
+
 ## Output language and wording
 
 All user-facing output of this skill (the page, notes, and chat replies) is written in **Traditional Chinese as used in Taiwan**. Technical terms stay in English when that is clearer (for example AUC, PCA, token).
 
 - Write complete sentences with a clear subject and verb. Lead with the conclusion, then the reason.
-- Explain a technical term in one plain sentence the first time it appears.
+- Explain a technical term in one plain sentence the first time it appears (see "Who reads the page").
 - Use Taiwanese terminology, not Mainland terms: 影片 not 視頻, 資料 not 數據 (for data), 品質 not 質量, 資訊 not 信息, 預設 not 默認, 程式碼 not 代碼, 模組 not 模塊, 網路 not 網絡, 支援 not 支持 (for software support), 檔案 not 文件 (for files).
 - **Cite papers by author and year** (for example Wang et al. 2017), linked to their note. Short ids such as `wang17` are file names only and never appear in the text.
 - **No compressed coined words.** Say it in a plain phrase instead (「背景是否接近白雜訊」, not 「白性」); a technical term gets a plain one-sentence explanation the first time it appears.
@@ -53,6 +62,7 @@ These come from the lab's review of how a paper must be reported (see [reference
 | 8 | Animate the math | Every knowledge point with a formula (`data-formula="1"`) has a formula animation that steps through the computation with this run's numbers |
 | 9 | The page shows understanding, not open questions | The page contains confirmed content only (see "What the page shows") |
 | 10 | Formulas: only the key ones in the text, each after an example; the rest on demand | 1 to 5 key formulas, each a card after its knowledge point's demo, with a plain sentence whose coloured words match the formula's coloured terms; no display formula in the storyline; every formula of the paper, the formula map and the symbol table in the 附錄 at the end |
+| 11 | Written for a reader who knows nothing about the field | Every term is in the term list and explained at its first use, capitalised jargon in the storyline is all listed, and the latest cold read lists nothing (`check_page.py`) |
 
 ## What the page shows
 
@@ -169,11 +179,13 @@ All knowledge points live on one page and share one widget library. The page, th
 
 **Page order.** The page reads from top to bottom as one argument: the conclusion, the problem, the traditional approach, the paper's idea and evidence, then each knowledge point, and last the full formulas for readers who want them. A reader who stops anywhere has understood everything above that point.
 
-1. **重點整理**, then **the storyline** (stage 5). It carries no display formula; it explains in words, numbers and the paper's figures, and links each step to its knowledge point.
-2. **The knowledge-point map and the knowledge points**, each showing its key formula card when it has one.
-3. **The cluster comparison.**
-4. **附錄** (`<div id="appendix">`): the formula map (`PR.formulaMap`: one lane per strand of the method, one box per formula with its number and page, arrows naming the step between formulas, a dashed arrow for a proof, the final objective highlighted, and one caption paragraph telling the derivation in words), the symbol table, then every formula one by one, grouped in the order of the derivation: a `section.eq-sec` with its number as `data-tag`, the formula typeset in LaTeX (`tex-block`, terms coloured with `\ca` `\cb` `\cc` `\cd`), its page and section, each symbol explained in one line, and links to the formula it comes from, the one it leads to, and the knowledge point that computes it.
-5. **The check results.**
+1. **The opening** (`<section id="story">` with `<p class="lede">`): 3 to 4 sentences without jargon.
+2. **The storyline** (stage 5). It carries no display formula; it explains in words, numbers and the paper's figures, and links each step to its knowledge point.
+3. **The knowledge-point map and the knowledge points**, each showing its key formula card when it has one.
+4. **重點整理**: the 3-sentence summary, for a reader who has now seen the problem and the method.
+5. **The cluster comparison.**
+6. **附錄** (`<div id="appendix">`): the formula map (`PR.formulaMap`: one lane per strand of the method, one box per formula with its number and page, arrows naming the step between formulas, a dashed arrow for a proof, the final objective highlighted, and one caption paragraph telling the derivation in words), the symbol table, then every formula one by one, grouped in the order of the derivation: a `section.eq-sec` with its number as `data-tag`, the formula typeset in LaTeX (`tex-block`, terms coloured with `\ca` `\cb` `\cc` `\cd`), its page and section, each symbol explained in one line, and links to the formula it comes from, the one it leads to, and the knowledge point that computes it.
+7. **The check results.**
 
 **Knowledge points.**
 
@@ -193,11 +205,11 @@ All knowledge points live on one page and share one widget library. The page, th
 
 **Where the computation runs.** In the browser. Computation that needs Python packages, a model or large data belongs to the labs of $paper-reading-presentation (stage 0, item 5), not to this page.
 
-**Acceptance.** Run `python <skill>/scripts/check_page.py <topic>`. It opens the page in the Chrome, Edge or Chromium already on the machine, moves every control of every demo and confirms the output changes, steps through every formula animation, runs every `PR.check`, opens every figure, and prints one line per knowledge point (通過 / 未通過 / 無示範). The page as a whole fails when the formula layer is incomplete (no formula map, a box linking nowhere, a formula section missing from the map, an empty symbol table, a formula KaTeX could not typeset), when the key formulas break their rules (none, more than 5, before their demo, without a plain sentence whose coloured words match the formula), when a display formula appears in the storyline, when the formula map is not in the 附錄, when a figure is a screenshot or does not open, when no knowledge point runs a traditional approach, when a map entry has no section, or when unconfirmed wording appears. Fix what fails and run it again. Copy its lines into the 驗收結果 table, then fill the 報告要求對照 table. No screenshots.
+**Acceptance.** Run `python <skill>/scripts/check_page.py <topic>`. It opens the page in the Chrome, Edge or Chromium already on the machine, moves every control of every demo and confirms the output changes, steps through every formula animation, runs every `PR.check`, opens every figure, and prints one line per knowledge point (通過 / 未通過 / 無示範). The page as a whole fails when the formula layer is incomplete (no formula map, a box linking nowhere, a formula section missing from the map, an empty symbol table, a formula KaTeX could not typeset), when the key formulas break their rules (none, more than 5, before their demo, without a plain sentence whose coloured words match the formula), when a display formula appears in the storyline, when the formula map is not in the 附錄, when a listed term is used before it is explained or capitalised jargon in the storyline is not listed, when the latest cold read is missing, older than `index.html` or lists anything, when a figure is a screenshot or does not open, when no knowledge point runs a traditional approach, when a map entry has no section, or when unconfirmed wording appears. It also writes `_work/verify/reading_text.txt` for the cold read: run it as [references/cold-read.md](references/cold-read.md) describes, fix what it lists, and repeat until the list is empty (at most 3 rounds, then report what remains). Fix what fails and run it again. Copy its lines into the 驗收結果 table, then fill the 報告要求對照 table. No screenshots.
 
 ## Stage 5: report storyline
 
-The storyline opens `index.html`, right after 重點整理. It connects the cluster, the difficulties and the knowledge points, and each section links to the knowledge-point sections it relies on.
+The storyline opens `index.html`, right after the opening sentences. It connects the cluster, the difficulties and the knowledge points, and each section links to the knowledge-point sections it relies on.
 
 Use these Chinese section titles on the page:
 
@@ -210,7 +222,7 @@ Use these Chinese section titles on the page:
 | 5. 證據與改善幅度 | How each paper tests its claims, what the results support, whether conditions are comparable |
 | 6. 已解決與未解決 | What is supported by evidence, what improves only under specific conditions, what is still unsolved (a limitation the authors state, or a gap later work addressed; not the reader's open questions) |
 | 7. 因此我們做了什麼 | Optional, only when the user supplies their own work (results, code, data): which remaining failure it starts from, what was done, and what it achieved, each claim with its source (the user's file or report, or 本次實際重現 when rerun here). Never written from a guess about the user's research |
-| 重點整理 | 3 sentences: the core problem, the improvement the evidence supports, the problem still unsolved |
+| 重點整理 | After the knowledge points, 3 sentences: the core problem, the improvement the evidence supports (with its scale), the problem still unsolved |
 
 There is no section of open questions; see "What the page shows".
 

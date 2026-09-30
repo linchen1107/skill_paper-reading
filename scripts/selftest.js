@@ -96,6 +96,62 @@
     out.storyFormulas = [...document.querySelectorAll('.tex-block')].filter(n => !n.closest('#kps') && !n.closest('#appendix')).length;
     const fmap = document.querySelector('.fmap');
     out.overviewInAppendix = !fmap || !!fmap.closest('#appendix');
+    // terms: each registered term is explained (<dfn data-term>) at or before its first use in reading order;
+    // capitalised jargon in the opening and the storyline must be registered
+    const mainEl = document.querySelector('main');
+    // prose in reading order: headings, the knowledge-point map, source lines, demo output and the appendix are labels
+    // or generated text, so a term's first use is counted in the prose only
+    const SKIP = 'h1, h2, h3, #map, .src, .kp-nav, .demo, .katex, .tex, .tex-block, code, .keyeq-head, #appendix, #checks';
+    const walker = document.createTreeWalker(mainEl, NodeFilter.SHOW_TEXT, { acceptNode: n => (n.parentElement.closest(SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+    let full = '';
+    const starts = new Map();
+    while (walker.nextNode()) { const n = walker.currentNode; if (!starts.has(n.parentElement)) starts.set(n.parentElement, full.length); full += n.data; }
+    const offsetOf = node => { for (const [elx, off] of starts) if (node === elx || node.contains(elx)) return off; return Infinity; };
+    const gloss = (window.PR && PR.glossary) || {};
+    const dfns = [...mainEl.querySelectorAll('dfn[data-term]')];
+    out.terms = { count: Object.keys(gloss).length, late: [], notExplained: [], dfnNotListed: [], unlisted: [] };
+    Object.keys(gloss).forEach(k => {
+      const m = PR.termRe(k).exec(full);
+      if (!m) return;
+      const d = dfns.find(x => x.dataset.term === k);
+      if (!d) out.terms.notExplained.push(k);
+      else if (offsetOf(d) > m.index) out.terms.late.push({ term: k, context: full.slice(Math.max(0, m.index - 30), m.index + k.length + 20).replace(/\s+/g, ' ') });
+    });
+    dfns.forEach(d => { if (!(d.dataset.term in gloss)) out.terms.dfnNotListed.push(d.dataset.term); });
+    const known = Object.keys(gloss).map(k => k.toLowerCase());
+    const story = [...document.querySelectorAll('.lede, #story, main section[id]')].filter(x => !x.matches('section') || x.id === 'story' || /^s\d+$/.test(x.id));
+    const words = new Set();
+    story.forEach(sec => {
+      const c = sec.cloneNode(true);
+      c.querySelectorAll('.katex, .tex, .tex-block, code, a').forEach(x => x.remove());
+      const tw = document.createTreeWalker(c, NodeFilter.SHOW_TEXT);
+      let txt = '';
+      while (tw.nextNode()) txt += ' ' + tw.currentNode.data;
+      (txt.match(/[A-Za-z][A-Za-z0-9.\-]*[A-Za-z0-9]/g) || []).forEach(w => {
+        const caps = (w.match(/[A-Z]/g) || []).length, digit = /[0-9]/.test(w);
+        if (caps < 2 && !(caps && digit)) return;
+        if (/^[IVX]+(-[A-Z0-9]+)?$/.test(w) || /^[IVX]+-[A-Z]\d?$/.test(w)) return;
+        if (known.some(k => k === w.toLowerCase() || PR.termRe(w).test(k))) return;
+        words.add(w);
+      });
+    });
+    out.terms.unlisted = [...words];
+    // the text a cold reader gets: headings and prose in reading order, without demos, appendix and check tables
+    const blocks = [...mainEl.querySelectorAll('h1, h2, h3, p, li, dt, dd, figcaption, th, td, .stat, .keyeq .tex-block')]
+      .filter(b => !b.closest('.demo, #appendix, #checks') && !b.parentElement.closest('p, li, dd, td, th, figcaption'));
+    // what a reader sees: an inline formula as its glyphs (not the LaTeX kept for screen readers), superscripts as ^
+    const visibleText = b => {
+      const c = b.cloneNode(true);
+      c.querySelectorAll('.katex').forEach(k => { const h = k.querySelector('.katex-html'); k.replaceWith(h ? h.textContent : ''); });
+      c.querySelectorAll('sup').forEach(x => x.replaceWith('^' + x.textContent));
+      c.querySelectorAll('sub').forEach(x => x.replaceWith('_' + x.textContent));
+      return c.textContent;
+    };
+    // a typeset formula reaches the reader as symbols, not LaTeX source; its symbols are listed in the card below it
+    out.readingText = blocks.map(b => (/^H[123]$/.test(b.tagName) ? '\n' + '#'.repeat(+b.tagName[1]) + ' ' : '') +
+      (b.classList.contains('tex-block') ? '[公式：頁面上以數學符號排版顯示，各符號的意思見下方「符號與出處」]'
+        : b.classList.contains('stat') ? '[數字卡] ' + [...b.children].map(x => x.textContent.trim()).join('：')
+        : visibleText(b).replace(/\s+/g, ' ').trim())).join('\n');
     // figures of the paper are the real files (original bitmap or vector), not screenshots
     out.figures = [...document.querySelectorAll('main .figure img, main figure img')].map(i => ({ src: i.getAttribute('src') || '', ok: /-real\.(svg|png|jpe?g|gif|webp)$/i.test(i.getAttribute('src') || ''), loaded: i.complete && i.naturalWidth > 0 }));
     // clicking a figure opens it in the popup

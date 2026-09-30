@@ -20,6 +20,8 @@
  *
  * Formulas: <div class="tex-block">\ca{L_{Adv}} = …</div> or <span class="tex">…</span> hold LaTeX and are
  * typeset with katex/ (colour macros \ca \cb \cc \cd); anim frames take tex: '…' as well.
+ * Terms: PR.terms({'term': 'one plain sentence', …}); the first use is <dfn data-term="term">…</dfn>, later uses get the
+ * explanation on hover.
  * Key formula card, placed after a demo: <div class="keyeq"> with a plain sentence whose coloured words
  * (<span class="w-a">…</span>, w-b, w-c, w-d) match the formula's \ca \cb \cc \cd terms; pointing at one marks both.
  * Formula map (how the formulas connect; nodes jump to their section): PR.formulaMap('fmap', {...}),
@@ -203,6 +205,52 @@
     const hex = PR.TERM_HEX[cls];
     return [...card.querySelectorAll('.katex [style*="color"]')].filter(n => (n.getAttribute('style') || '').toLowerCase().includes(hex));
   };
+  // ---------- Terms: every technical term is explained where it first appears ----------
+  // demos.js lists the page's terms:  PR.terms({'hidden state': '模型讀到每個字時，內部產生的一長串數字。', …});
+  // The first use in reading order is written <dfn data-term="hidden state">hidden state</dfn>, with the explanation
+  // in the same sentence. Later uses get the explanation on hover (the first later use in each section).
+  PR.glossary = {};
+  PR.terms = function (map) { Object.assign(PR.glossary, map); };
+  const escRe = k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  PR.termRe = function (k, flags) {
+    const body = escRe(k);
+    return new RegExp(/^[\x20-\x7e]+$/.test(k) ? '(?<![A-Za-z0-9])' + body + '(?![A-Za-z0-9])' : body, flags || 'i');
+  };
+  const NO_TERMS = 'dfn, .term-ref, .katex, .tex, .tex-block, code, pre, script, style, .demo, .fmap, a, h1, h2, h3, #symbol-table, button, select, label, .keyeq-head';
+  function markTerms() {
+    const main = document.querySelector('main');
+    const keys = Object.keys(PR.glossary).sort((a, b) => b.length - a.length);
+    document.querySelectorAll('dfn[data-term]').forEach(d => {
+      const g = PR.glossary[d.dataset.term];
+      if (g) { d.setAttribute('data-tip', g); d.tabIndex = 0; }
+    });
+    if (!main || !keys.length) return;
+    const re = new RegExp(keys.map(k => PR.termRe(k).source).join('|'), 'gi');
+    const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT, {
+      acceptNode: n => (n.parentElement.closest(NO_TERMS) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    const seen = new Map();
+    nodes.forEach(n => {
+      const sec = n.parentElement.closest('section') || main;
+      if (!seen.has(sec)) seen.set(sec, new Set());
+      const done = seen.get(sec);
+      re.lastIndex = 0;
+      let m, last = 0, hit = false;
+      const frag = document.createDocumentFragment();
+      while ((m = re.exec(n.data))) {
+        const key = keys.find(k => k.toLowerCase() === m[0].toLowerCase());
+        if (!key || done.has(key)) continue;
+        done.add(key); hit = true;
+        frag.append(n.data.slice(last, m.index), el('span', { class: 'term-ref', 'data-tip': PR.glossary[key], tabindex: '0', text: m[0] }));
+        last = m.index + m[0].length;
+      }
+      if (!hit) return;
+      frag.append(n.data.slice(last));
+      n.replaceWith(frag);
+    });
+  }
+
   function linkTerms() {
     document.querySelectorAll('.keyeq').forEach(card => {
       if (card.dataset.linked) return;
@@ -301,6 +349,10 @@ main .figure img{cursor:zoom-in}
 .keyeq summary:hover{color:#67e8f9}
 .keyeq dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 16px;margin:8px 0 4px}
 .keyeq dd{margin:0}
+dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px solid #155e75;cursor:help;position:relative}
+.term-ref{border-bottom:1px dotted #64748b;cursor:help;position:relative}
+[data-tip]:hover::after,[data-tip]:focus::after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + 4px);z-index:60;width:max-content;max-width:min(340px,80vw);background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 10px;font:400 13px/1.6 "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.45);white-space:normal}
+.lede{font-size:17px;line-height:1.9;color:#e2e8f0;max-width:46em;margin:18px 0 6px}
 .w-a{color:#67e8f9}.w-b{color:#fbbf24}.w-c{color:#c4b5fd}.w-d{color:#86efac}
 .w-a,.w-b,.w-c,.w-d{font-weight:600;border-bottom:1px dashed currentColor;cursor:help;border-radius:2px}
 .pr-hl{background:rgba(148,163,184,.22);box-shadow:0 0 0 2px rgba(148,163,184,.22);border-radius:3px}
@@ -564,7 +616,7 @@ main .figure img{cursor:zoom-in}
   }
 
   function boot() {
-    ensureCss(); renderTexIn(document); linkTerms(); buildToc(); pageChrome(); kpNav(); wireLinks(); lightbox(); labLink();
+    ensureCss(); renderTexIn(document); linkTerms(); markTerms(); buildToc(); pageChrome(); kpNav(); wireLinks(); lightbox(); labLink();
     let t = null, w0 = window.innerWidth;
     window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => {
       if (Math.abs(window.innerWidth - w0) < 40) return; w0 = window.innerWidth;
