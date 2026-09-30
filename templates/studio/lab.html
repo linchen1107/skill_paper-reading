@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Labs</title>
+<title>真實資料實驗</title>
 <link rel="stylesheet" href="../katex/katex.min.css">
 <style>
   :root { --bg: #0f1419; --panel: #151c24; --card: #111820; --ink: #e2e8f0; --muted: #94a3b8; --line: #2b3643;
@@ -31,7 +31,7 @@
   a.chip { color: var(--accent); border-color: #155e75; }
   .work { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px; align-items: start; }
   .panel { position: sticky; top: 64px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
-  .panel h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+  .panel h2 { font-size: 14px; letter-spacing: .04em; color: var(--muted); margin: 0 0 10px; }
   .ctl { margin-bottom: 14px; }
   .ctl .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .ctl label { font-weight: 600; font-size: 14px; }
@@ -57,7 +57,7 @@
   .methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 16px; }
   .method { margin: 0; }
   .method .head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-  .kind { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; border-radius: 4px; padding: 1px 7px; border: 1px solid; }
+  .kind { font-size: 12px; border-radius: 4px; padding: 1px 7px; border: 1px solid; }
   .kind.traditional { color: var(--gold); border-color: #854d0e; }
   .kind.paper { color: var(--accent); border-color: #155e75; }
   .metric { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 8px; }
@@ -74,6 +74,7 @@
   .prov div { margin: 3px 0; }
   .prov .live::before { content: "●"; color: var(--good); margin-right: 6px; }
   .prov .cache::before { content: "◆"; color: var(--gold); margin-right: 6px; }
+  .prov .remote::before { content: "▲"; color: var(--accent); margin-right: 6px; }
   .note { color: var(--muted); font-size: 13px; }
   .error { border-color: #7f1d1d; background: #1a1010; }
   .error pre { white-space: pre-wrap; font-size: 12px; color: #fca5a5; }
@@ -89,13 +90,13 @@
 </head>
 <body>
 <div class="top">
-  <span class="brand" id="brand">Labs</span>
-  <span class="chip">computed by the Python backend on request</span>
-  <a class="back" href="../index.html">← Reading page</a>
+  <span class="brand" id="brand">真實資料實驗</span>
+  <span class="chip">每次操作都由 Python 後端即時計算</span>
+  <a class="back" href="../index.html">← 回閱讀頁</a>
 </div>
 <div class="layout">
-  <nav id="lab-list" aria-label="Labs"></nav>
-  <main id="lab"><p class="empty">Loading labs…</p></main>
+  <nav id="lab-list" aria-label="實驗列表"></nav>
+  <main id="lab"><p class="empty">正在載入實驗…</p></main>
 </div>
 <script src="../katex/katex.min.js"></script>
 <script src="../widgets.js"></script>

@@ -36,7 +36,7 @@
       const r = await fetch('/api/labs');
       labs = await r.json();
     } catch (e) { return notServed(); }
-    if (!labs.length) { $('#lab').innerHTML = '<p class="empty">No labs are registered in studio/server.py yet.</p>'; return; }
+    if (!labs.length) { $('#lab').innerHTML = '<p class="empty">studio/server.py 還沒有註冊任何實驗。</p>'; return; }
     const list = $('#lab-list');
     labs.forEach(l => {
       const b = el('button', { type: 'button', 'data-lab': l.name }, l.title, el('span', { class: 'src', text: l.source }));
@@ -57,9 +57,9 @@
   function notServed() {
     $('#lab').innerHTML = '';
     $('#lab').append(el('div', { class: 'empty' },
-      el('h1', { text: 'The backend is not running' }),
-      el('p', { html: 'Labs compute on the Python backend, so this page must be opened through it. In the topic folder run <code>python serve.py</code>; the page then opens at <code>http://127.0.0.1:&lt;port&gt;/studio/lab.html</code>.' }),
-      el('p', { html: 'The reading page works without it: <a href="../index.html">open the reading page</a>.' })));
+      el('h1', { text: '後端還沒有啟動' }),
+      el('p', { html: '實驗由 Python 後端計算，所以這一頁要透過後端開啟。在主題資料夾執行 <code>python serve.py</code>，頁面會在 <code>http://127.0.0.1:&lt;埠號&gt;/studio/lab.html</code> 打開。' }),
+      el('p', { html: '閱讀頁不需要後端：<a href="../index.html">開啟閱讀頁</a>。' })));
   }
 
   // ---------- one lab ----------
@@ -73,19 +73,19 @@
       params[p.key] = v;
     });
     document.querySelectorAll('#lab-list button').forEach(b => b.classList.toggle('on', b.dataset.lab === name));
-    document.title = current.title + ' · Labs';
+    document.title = current.title + '・真實資料實驗';
     const main = $('#lab');
     main.innerHTML = '';
-    const chips = el('div', { class: 'chips' }, el('span', { class: 'chip', text: 'Paper: ' + current.source }));
-    current.knowledge.forEach(k => chips.append(el('a', { class: 'chip', href: '../index.html#kp-' + k, text: 'Knowledge point ' + k })));
+    const chips = el('div', { class: 'chips' }, el('span', { class: 'chip', text: '原論文：' + current.source }));
+    current.knowledge.forEach(k => chips.append(el('a', { class: 'chip', href: '../index.html#kp-' + k, text: '知識點 ' + k })));
     main.append(el('h1', { text: current.title }), el('p', { class: 'question', text: current.question }), chips);
-    const panel = el('aside', { class: 'panel' }, el('h2', { text: 'Settings' }));
+    const panel = el('aside', { class: 'panel' }, el('h2', { text: '設定' }));
     current.params.forEach(p => panel.append(control(p)));
-    const reset = el('button', { type: 'button', text: 'Reset' });
+    const reset = el('button', { type: 'button', text: '重設' });
     reset.addEventListener('click', () => open(current.name));
-    const share = el('button', { type: 'button', text: 'Copy link' });
-    share.addEventListener('click', async () => { try { await navigator.clipboard.writeText(location.href); share.textContent = 'Copied'; } catch (e) { share.textContent = 'Copy failed'; } setTimeout(() => (share.textContent = 'Copy link'), 1500); });
-    panel.append(el('div', { class: 'actions' }, reset, share), el('div', { class: 'status', id: 'status' }, el('span', { class: 'dot' }), el('span', { text: 'Ready' })));
+    const share = el('button', { type: 'button', text: '複製連結' });
+    share.addEventListener('click', async () => { try { await navigator.clipboard.writeText(location.href); share.textContent = '已複製'; } catch (e) { share.textContent = '複製失敗'; } setTimeout(() => (share.textContent = '複製連結'), 1500); });
+    panel.append(el('div', { class: 'actions' }, reset, share), el('div', { class: 'status', id: 'status' }, el('span', { class: 'dot' }), el('span', { text: '就緒' })));
     main.append(el('div', { class: 'work' }, panel, el('section', { class: 'results', id: 'results' })));
     lastOk = null;
     run();
@@ -134,18 +134,18 @@
     const ctrl = (inflight = new AbortController());
     const results = $('#results');
     results.classList.add('busy');
-    setStatus('busy', 'Computing on the backend…');
+    setStatus('busy', '後端計算中…');
     try {
       const r = await fetch('/api/labs/' + current.name, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params), signal: ctrl.signal });
       const data = await r.json();
       if (ctrl !== inflight) return;
       if (!r.ok || data.error) throw Object.assign(new Error(data.error || r.statusText), { trace: data.trace });
       render(data); lastOk = data;
-      setStatus('', `Done in ${data.elapsed_ms} ms`);
+      setStatus('', `完成，耗時 ${data.elapsed_ms} ms`);
     } catch (e) {
       if (e.name === 'AbortError') return;
       renderError(e);
-      setStatus('err', 'Failed');
+      setStatus('err', '計算失敗');
     } finally {
       if (ctrl === inflight) { results.classList.remove('busy'); inflight = null; }
     }
@@ -158,10 +158,10 @@
     res.innerHTML = '';
     res.append(el('p', { class: 'summary', text: d.summary || '' }));
     if (d.input) {
-      const c = el('div', { class: 'card' }, el('h3', { text: d.input.title || 'Input' }));
+      const c = el('div', { class: 'card' }, el('h3', { text: d.input.title || '輸入' }));
       res.append(c);  // on the page first, so the plot can take the card's width
       if (d.input.plot) plot(c, d.input.plot);
-      if (d.input.image) c.append(el('figure', { class: 'figure' }, el('img', { class: 'input-img', src: '../' + d.input.image.replace(/^\/+/, ''), alt: d.input.title || 'input' })));
+      if (d.input.image) c.append(el('figure', { class: 'figure' }, el('img', { class: 'input-img', src: '../' + d.input.image.replace(/^\/+/, ''), alt: d.input.title || '輸入' })));
       if (d.input.text) c.append(el('p', { text: d.input.text }));
     }
     if (d.methods && d.methods.length) {
@@ -177,17 +177,17 @@
       d.methods.forEach(m => {
         const card = el('div', { class: 'card method' + (m === best ? ' win' : '') });
         row.append(card);
-        const head = el('div', { class: 'head' }, el('span', { class: 'kind ' + (m.kind || ''), text: m.kind === 'paper' ? 'This paper' : m.kind === 'traditional' ? 'Traditional' : (m.kind || '') }), el('h3', { text: m.name, style: 'margin:0' }));
-        if (m === best) head.append(el('span', { class: 'win-tag', text: '✓ better on this input' }));
+        const head = el('div', { class: 'head' }, el('span', { class: 'kind ' + (m.kind || ''), text: m.kind === 'paper' ? '本論文方法' : m.kind === 'traditional' ? '傳統作法' : (m.kind || '') }), el('h3', { text: m.name, style: 'margin:0' }));
+        if (m === best) head.append(el('span', { class: 'win-tag', text: '✓ 這筆輸入上較好' }));
         card.append(head);
-        if (m.metric) card.append(el('div', { class: 'metric' }, el('b', { text: fmt(m.metric.value) }), el('span', { text: m.metric.label + (m.metric.better ? ` (${m.metric.better} is better)` : '') })));
+        if (m.metric) card.append(el('div', { class: 'metric' }, el('b', { text: fmt(m.metric.value) }), el('span', { text: m.metric.label + (m.metric.better ? `（${m.metric.better === 'lower' ? '越低越好' : '越高越好'}）` : '') })));
         if (m.plot) plot(card, m.plot);
         if (m.text) card.append(el('p', { class: 'note', text: m.text }));
       });
     }
     if (d.table && window.PR && PR.table) res.append(el('div', { class: 'card' }, PR.table(d.table)));
     if (d.failures && d.failures.length) {
-      const c = el('div', { class: 'card' }, el('h3', { text: `Where the paper's method does worse (${d.failures.length})` }));
+      const c = el('div', { class: 'card' }, el('h3', { text: `論文方法表現較差的樣本（${d.failures.length} 個，點一下載入）` }));
       const f = el('div', { class: 'failures' });
       d.failures.forEach(x => {
         const b = el('button', { type: 'button' }, x.title, x.detail ? el('small', { text: x.detail }) : null);
@@ -198,20 +198,21 @@
       });
       c.append(f); res.append(c);
     }
-    const prov = el('div', { class: 'card prov' }, el('h3', { text: 'Where these numbers come from' }), el('div', { class: 'live', text: d.provenance.live }));
-    (d.provenance.cached || []).forEach(m => prov.append(el('div', { class: 'cache', text: `Cached: ${m.about}, computed on this machine ${m.computed.replace('T', ' ')} (${m.seconds} s).` })));
+    const prov = el('div', { class: 'card prov' }, el('h3', { text: '這些數字從哪裡來' }), el('div', { class: 'live', text: d.provenance.live }));
+    (d.provenance.remote || []).forEach(m => prov.append(el('div', { class: 'remote', text: `由專案既有的後端計算：${m.about}（${m.url}，${m.ms} ms）` })));
+    (d.provenance.cached || []).forEach(m => prov.append(el('div', { class: 'cache', text: `快取：${m.about}，${m.computed.replace('T', ' ')} 在這台電腦算好（耗時 ${m.seconds} 秒），這次直接沿用` })));
     if (d.note) prov.append(el('div', { class: 'note', text: d.note }));
     res.append(prov);
   }
 
   function renderError(e) {
     const res = $('#results');
-    const retry = el('button', { type: 'button', text: 'Try again', class: 'chip', style: 'cursor:pointer;background:none' });
+    const retry = el('button', { type: 'button', text: '重試', class: 'chip', style: 'cursor:pointer;background:none' });
     retry.addEventListener('click', run);
-    const card = el('div', { class: 'card error' }, el('h3', { text: 'The backend could not compute this setting' }), el('p', { text: e.message }));
-    if (e.trace) card.append(el('details', {}, el('summary', { text: 'Details' }), el('pre', { text: e.trace.join('\n') })));
+    const card = el('div', { class: 'card error' }, el('h3', { text: '後端無法計算這組設定' }), el('p', { text: e.message }));
+    if (e.trace) card.append(el('details', {}, el('summary', { text: '錯誤細節' }), el('pre', { text: e.trace.join('\n') })));
     card.append(retry);
-    if (lastOk) { render(lastOk); res.prepend(card, el('p', { class: 'note', text: 'Below: the last setting that computed successfully.' })); }
+    if (lastOk) { render(lastOk); res.prepend(card, el('p', { class: 'note', text: '下方是上一組成功計算的結果。' })); }
     else { res.innerHTML = ''; res.append(card); }
   }
 

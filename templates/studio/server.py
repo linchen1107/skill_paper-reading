@@ -25,6 +25,7 @@ import socket
 import sys
 import time
 import traceback
+import urllib.request
 import webbrowser
 from pathlib import Path
 from urllib.parse import urlparse
@@ -41,7 +42,7 @@ def lab(name, title, question, source, params, knowledge=()):
     """Register a lab.
 
     name       short id used in the address, for example "ood"
-    title      what the user sees, for example "OOD detection on real SST-2 sentences"
+    title      what the user sees, in Traditional Chinese, for example "真實 SST-2 句子上的 OOD 偵測"
     question   the claim or failure of the paper this lab tests, one sentence
     source     where in the paper, for example "Table V, Fig. 5"
     params     list of controls:
@@ -81,10 +82,30 @@ def check(name):
 # }
 # PLOT is the reading page's plot spec: {"title", "xlabel", "ylabel", "type": "line" | "bar" | "heatmap",
 #   "series": [{"name", "x", "y", "dashed"}]} or {"type": "heatmap", "z": [[...]]}.
-# The server adds "provenance" and "elapsed_ms".
+# The server adds "provenance" (live, cached, remote) and "elapsed_ms".
 
 
-_USED_CACHE = []
+_USED_CACHE, _USED_REMOTE = [], []
+
+
+def remote(url, payload=None, about="", timeout=600):
+    """Call a backend the project already has and return its JSON, instead of copying its code.
+
+    url      for example "http://127.0.0.1:5160/api/estimate"; GET without payload, POST with one
+    about    one sentence for the page, for example "既有套件：每件 3 票時的錯誤率估計"
+    The page states that these numbers were computed by that backend, with its address and time.
+    If it is not running, the lab fails with a message that names the address.
+    """
+    data = None if payload is None else json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    start = time.perf_counter()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            value = json.loads(r.read())
+    except OSError as e:
+        raise RuntimeError(f"專案既有的後端 {url} 沒有回應（{e}）；請先啟動它") from None
+    _USED_REMOTE.append({"url": url, "about": about or url, "ms": round((time.perf_counter() - start) * 1000)})
+    return value
 
 
 def cached(key, compute, about):
@@ -138,13 +159,15 @@ def run_lab(name, posted):
     item = LABS[name]
     params = clean_params(item["params"], posted)
     _USED_CACHE.clear()
+    _USED_REMOTE.clear()
     start = time.perf_counter()
     result = item["fn"](params)
     result["elapsed_ms"] = round((time.perf_counter() - start) * 1000)
     result["params"] = params
     result["provenance"] = {
-        "live": f"Computed for this request on this machine in {result['elapsed_ms']} ms.",
+        "live": f"這次操作在這台電腦即時計算，耗時 {result['elapsed_ms']} ms。",
         "cached": [dict(m) for m in _USED_CACHE],
+        "remote": [dict(m) for m in _USED_REMOTE],
     }
     return result
 
@@ -191,7 +214,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         name = path.removeprefix("/api/labs/")
         if not path.startswith("/api/labs/") or name not in LABS:
-            return self.send_json({"error": f"no lab named {name!r}"}, 404)
+            return self.send_json({"error": f"沒有名為 {name!r} 的實驗"}, 404)
         try:
             length = int(self.headers.get("Content-Length") or 0)
             posted = json.loads(self.rfile.read(length) or b"{}")
@@ -206,7 +229,7 @@ def free_port(start):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if s.connect_ex(("127.0.0.1", port)) != 0:
                 return port
-    sys.exit(f"no free port between {start} and {start + 49}")
+    sys.exit(f"{start} 到 {start + 49} 之間沒有可用的埠號")
 
 
 def main():
@@ -214,11 +237,13 @@ def main():
     ap.add_argument("--port", type=int, default=8000)
     ap.add_argument("--no-open", action="store_true")
     args = ap.parse_args()
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     port = free_port(args.port)
     server = http.server.ThreadingHTTPServer(("127.0.0.1", port),
                                              functools.partial(Handler, directory=str(TOPIC)))
     url = f"http://127.0.0.1:{port}/studio/lab.html"
-    print(f"Labs:    {url}\nReading: http://127.0.0.1:{port}/index.html\nStop with Ctrl+C", flush=True)
+    print(f"實驗頁：{url}\n閱讀頁：http://127.0.0.1:{port}/index.html\n按 Ctrl+C 停止", flush=True)
     if not args.no_open:
         webbrowser.open(url)
     try:
@@ -227,11 +252,13 @@ def main():
         pass
     finally:
         server.server_close()
-        print("stopped")
+        print("已停止")
 
 
 # ============================== LABS ==============================
-# Replace the example below with the labs confirmed in Step 0.
+# Replace the example below with the labs confirmed in Step 0. Page text (titles, labels, summaries,
+# notes) is written in Traditional Chinese as used in Taiwan. When the project already has a backend,
+# a lab calls it with remote(...) instead of copying its code.
 
 import math
 import random
@@ -257,45 +284,45 @@ def _rmse(a, b):
     return math.sqrt(sum((p - q) ** 2 for p, q in zip(a, b)) / len(a))
 
 
-@lab("example", title="Example: keeping an edge while removing noise",
-     question="A median filter keeps a step edge that a moving average blurs (template example; replace it).",
-     source="template example",
-     params=[{"key": "sample", "label": "Sample", "type": "sample", "value": 1,
-              "options": [{"value": s, "label": f"Signal {s}"} for s in range(1, 6)]},
-             {"key": "noise", "label": "Noise level", "type": "range", "min": 0.05, "max": 0.8, "step": 0.05,
-              "value": 0.2, "help": "Standard deviation of the added noise"},
-             {"key": "window", "label": "Window", "type": "range", "min": 3, "max": 31, "step": 2, "value": 9}],
+@lab("example", title="範例：去除雜訊時保留邊緣",
+     question="中位數濾波能保留階梯邊緣，移動平均則會把它抹平（範本範例，正式執行時換掉）。",
+     source="範本範例",
+     params=[{"key": "sample", "label": "樣本", "type": "sample", "value": 1,
+              "options": [{"value": s, "label": f"訊號 {s}"} for s in range(1, 6)]},
+             {"key": "noise", "label": "雜訊強度", "type": "range", "min": 0.05, "max": 0.8, "step": 0.05,
+              "value": 0.2, "help": "加入的雜訊的標準差"},
+             {"key": "window", "label": "視窗長度", "type": "range", "min": 3, "max": 31, "step": 2, "value": 9}],
      knowledge=())
 def example(p):
     clean, noisy = _signal(p["sample"], p["noise"])
     ma, md = _moving_average(noisy, p["window"]), _median(noisy, p["window"])
     e_ma, e_md = _rmse(ma, clean), _rmse(md, clean)
     x = list(range(len(clean)))
-    better = "median filter" if e_md < e_ma else "moving average"
-    failures = [{"title": f"Signal {s}", "detail": "moving average wins here", "sample": s}
+    better = "中位數濾波" if e_md < e_ma else "移動平均"
+    failures = [{"title": f"訊號 {s}", "detail": "這裡移動平均比較好", "sample": s}
                 for s in range(1, 6)
                 if _rmse(_moving_average(_signal(s, p["noise"])[1], p["window"]), _signal(s, p["noise"])[0])
                 < _rmse(_median(_signal(s, p["noise"])[1], p["window"]), _signal(s, p["noise"])[0])]
     return {
-        "summary": f"On signal {p['sample']}, the {better} is closer to the clean signal "
-                   f"(RMSE {min(e_ma, e_md):.3f} vs {max(e_ma, e_md):.3f}).",
-        "input": {"title": "Noisy input and the clean signal",
-                  "plot": {"title": "Input", "xlabel": "sample index", "ylabel": "value",
-                           "series": [{"name": "noisy", "x": x, "y": noisy}, {"name": "clean", "x": x, "y": clean, "dashed": True}]}},
+        "summary": f"在訊號 {p['sample']} 上，{better}比較接近乾淨訊號"
+                   f"（RMSE {min(e_ma, e_md):.3f} 對 {max(e_ma, e_md):.3f}）。",
+        "input": {"title": "含雜訊的輸入與乾淨訊號",
+                  "plot": {"title": "輸入", "xlabel": "樣本索引", "ylabel": "數值",
+                           "series": [{"name": "含雜訊", "x": x, "y": noisy}, {"name": "乾淨", "x": x, "y": clean, "dashed": True}]}},
         "methods": [
-            {"name": "Moving average", "kind": "traditional",
+            {"name": "移動平均", "kind": "traditional",
              "metric": {"label": "RMSE", "value": round(e_ma, 4), "better": "lower"},
-             "plot": {"title": "Moving average", "series": [{"name": "output", "x": x, "y": ma}, {"name": "clean", "x": x, "y": clean, "dashed": True}]}},
-            {"name": "Median filter", "kind": "paper",
+             "plot": {"title": "移動平均", "series": [{"name": "輸出", "x": x, "y": ma}, {"name": "乾淨", "x": x, "y": clean, "dashed": True}]}},
+            {"name": "中位數濾波", "kind": "paper",
              "metric": {"label": "RMSE", "value": round(e_md, 4), "better": "lower"},
-             "plot": {"title": "Median filter", "series": [{"name": "output", "x": x, "y": md}, {"name": "clean", "x": x, "y": clean, "dashed": True}]}},
+             "plot": {"title": "中位數濾波", "series": [{"name": "輸出", "x": x, "y": md}, {"name": "乾淨", "x": x, "y": clean, "dashed": True}]}},
         ],
         "failures": failures,
-        "note": "Generated signals; this example only shows the lab contract.",
+        "note": "程式產生的訊號；這個範例只示範實驗的回傳格式。",
     }
 
 
-@check("moving average of [1, 2, 3] with window 3 at the centre = 2")
+@check("[1, 2, 3] 以視窗 3 做移動平均，中間值 = 2")
 def _check_ma():
     return 2.0, _moving_average([1.0, 2.0, 3.0], 3)[1], 1e-9
 

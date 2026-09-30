@@ -100,9 +100,21 @@ Every claim carries one of these 3 labels, written exactly like this:
 6. **Which figures.** For the user's paper, every figure. For other papers, only the figures their note cites, usually 0 to 2.
 7. **Keep a reading log** at the top of the paper's note: text read in full (yes or no), figures viewed out of captioned figures (for example 20/20: Fig. 1 p.2, Fig. 2 p.3, ...), tables read from text (for example Table 1 p.7), and any equation that had to be cropped.
 
+## Before stage 0: choosing one paper from a batch
+
+Only when the user asks which paper of a set to report. Score every candidate on the same 5 criteria and give the table before recommending one:
+
+1. Length of the main text in pages.
+2. Whether it can open with an everyday example.
+3. Whether its traditional approach can actually be run on the same data.
+4. Whether real data at hand (the project's own or public) can reproduce its core experiment.
+5. How many papers in the local library form one cluster with it.
+
+Read each candidate far enough to score it (abstract, introduction, method overview, experiments); mark scores that rest on the abstract only. Recommend one with the reason, name the runner-up, and wait for the user's choice. The chosen paper then goes through stage 0 as usual.
+
 ## Stage 0: scope confirmation
 
-Before proposing, **read the user's paper in full by "How to read a paper"**, including every figure; the extracted text and figures may be written to `<topic>/_work/extract/` at this stage. Then do the searches and skimming needed to find candidates (titles, abstracts, reference lists). **The proposal starts with the reading log of the user's paper.** A proposal without it, or one that cites a figure or table not in the log, is not done. Mark everything in the proposal as provisional. Full reading, downloads, agent dispatch and code wait until the user authorizes the full run; reuse authorization already given. If the user has approved it, show the proposal briefly and continue; otherwise wait for a reply. List the following. Wait only if the full run has not already been authorized.
+Before proposing, **read the user's paper in full by "How to read a paper"**, including every figure; the extracted text and figures may be written to `<topic>/_work/extract/` at this stage. Then do the searches and skimming needed to find candidates (titles, abstracts, reference lists). **The proposal starts with the reading log of the user's paper.** A proposal without it, or one that cites a figure or table not in the log, is not done. **Reuse what the project already has.** Before searching, look in the project and in any folder the user named for existing paper notes, cluster notes and literature inventories (a table of papers with their fields), and build the candidate list from them first. An existing note or inventory entry is a lead, not a reading: a chosen paper is still read to the depth stage 1 requires, unless its note already records that depth. The proposal says which candidates came from existing material and which notes will be reused. Mark everything in the proposal as provisional. Full reading, downloads, agent dispatch and code wait until the user authorizes the full run; reuse authorization already given. If the user has approved it, show the proposal briefly and continue; otherwise wait for a reply. List the following. Wait only if the full run has not already been authorized.
 
 1. **Paper-cluster candidates**: expected count (default 20), initial list, and each paper's role.
 2. **Draft knowledge-point list**: groups, numbering, dependency order (foundations first).
@@ -120,6 +132,7 @@ Do not ask for the reading purpose. If the user did not state it, identify the p
 - **When agent delegation is authorized and available, split the reading across subagents.** The main flow first builds the candidate list and each paper's role, then hands papers to subagents in batches of 5 to 6. Each subagent fetches and extracts its whole batch with one command, reads each paper's `text.txt` once, never renders whole pages as images, and writes each note directly to `papers/<short>.md` (research problem, shortcomings of prior approaches, core method, evidence with source locations, role in the cluster, knowledge points involved, how much was read). It returns only one line per paper to the main flow: title, status, and the place in the user's paper it explains. The main flow does not read the notes in full; it searches them for what it needs, and spot-checks key numbers against the original paper.
 - **Depth follows the user's paper.** The user's paper is read in full. Direct predecessors and the methods it compares against in its tables are read in full too. Every other paper is read in its relevant parts: abstract, introduction, conclusion, and the sections that explain the place in the user's paper it was chosen for, found through `sections.tsv` and read with an offset. Only the figures a note cites are viewed. Skip appendices unless the user's paper relies on them. Subagents follow this and return their reading log.
 - **Look for local copies first.** Before calling a paper unobtainable, search the folder the user's paper came from (and any folder the user named) by title, author or year; use what is there and do not copy it elsewhere.
+- **Check each file name against the paper.** A local file's name often carries an author and a year; compare them with the title page of the PDF and report every mismatch (wrong author, wrong year, wrong paper) in the stage 1 summary. Notes use the paper's own details, never the file name's.
 - Confirm each paper's full title, authors and version, and prefer the original text. Surveys and secondary write-ups can help locate things, but key methods, numbers and conclusions must be checked against the original paper.
 - Mark each paper 已讀全文, 已讀相關段落 (list the sections read), 部分閱讀 (abstract or less, or a cited figure not viewed) or 待讀. Anything not obtained is marked 尚未確認.
 - If fewer than 20–30 related papers exist, state the actual count and the reason; do not claim the expected scale was reached.
@@ -130,6 +143,7 @@ Do not ask for the reading purpose. If the user did not state it, identify the p
 - **Open with one concrete failure, then an everyday example.** First a real case from the paper or its cluster: what was expected, what actually happened, and the effect, with its source (for LUNA: the model answers that water vapour is denser than air, Fig. 4). Then a technology or phenomenon from everyday life that shows why the problem is hard; for audio normalization, for example, recording and Dolby noise reduction: why signal-to-noise ratio (SNR) and dynamic range are hard to handle. The audience needs a picture first; only then can they follow the method.
 - **Explain the traditional approach in great detail, and run it.** How it works, what it solves, and where it falls short are prerequisites for understanding the paper. Papers usually assume the reader already knows this and start from the later part; the report must put it back. The traditional approaches the paper improves on or competes with become knowledge points marked `data-traditional="1"`, placed before the paper's method, and their demos run on the same data as the paper's method so the two can be compared side by side, including the settings where the traditional approach does as well or better.
 - **Difficulties need a situation and a source.** Record under which conditions which problem appears, its effect, and the location in the paper or demo. A shortcoming the authors state in the Introduction without supporting evidence is written on the page as the authors' statement (原論文報告, with location); never invent a failure.
+- **A failure measured in this run counts as evidence.** When the traditional approach or the paper's method is run on real data and fails (for example an estimate that comes out 11% to 31% low), the failure is written on the page as 本次實際重現, with the dataset, the files or sample count, the settings and the code location. On generated data it is also 本次實際重現, stated as generated data, and it shows how the method behaves, not how it behaves on the real task.
 
 ## Stage 3: knowledge-point map
 
@@ -195,6 +209,7 @@ Use these Chinese section titles on the page:
 | 4. 核心想法與方法 | What each paper changes, which difficulty it targets, why it should work; which knowledge points it maps to |
 | 5. 證據與改善幅度 | How each paper tests its claims, what the results support, whether conditions are comparable |
 | 6. 已解決與未解決 | What is supported by evidence, what improves only under specific conditions, what is still unsolved (a limitation the authors state, or a gap later work addressed; not the reader's open questions) |
+| 7. 因此我們做了什麼 | Optional, only when the user supplies their own work (results, code, data): which remaining failure it starts from, what was done, and what it achieved, each claim with its source (the user's file or report, or 本次實際重現 when rerun here). Never written from a guess about the user's research |
 | 重點整理 | 3 sentences: the core problem, the improvement the evidence supports, the problem still unsolved |
 
 There is no section of open questions; see "What the page shows".
@@ -214,7 +229,7 @@ There is no section of open questions; see "What the page shows".
 
 ## Output location
 
-Never write to an Obsidian vault unless the user explicitly asks. Use the user's specified writable location; otherwise place the topic under the current workspace, following any host-specific output-folder rule:
+Never write to an Obsidian vault unless the user explicitly asks. The output folder is chosen in this order: a location the user specifies; a rule of the current project about where output goes (its `CLAUDE.md`, `AGENTS.md` or README, for example "write only under work/<project>/"), with the topic as a subfolder there; otherwise the current workspace. Stage 0 states the folder chosen and why. The default layout:
 
 ```
 <workspace>/paper-reading/<topic>/

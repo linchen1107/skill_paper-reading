@@ -120,8 +120,8 @@ def build_reading() -> str:
     body = body.replace("<plugin>/", "<skill>/")
     body = replace_required(
         body,
-        "Never write to an Obsidian vault unless the user explicitly asks. By default, write under the current user's `Documents/claude/` (`~/Documents/claude/`; on Windows `%USERPROFILE%\\Documents\\claude\\`), regardless of the current working directory; resolve the home directory at run time instead of assuming a user name. A location the user specifies takes precedence:",
-        "Never write to an Obsidian vault unless the user explicitly asks. Use the user's specified writable location; otherwise place the topic under the current workspace, following any host-specific output-folder rule:",
+        "otherwise the current user's `Documents/claude/` (`~/Documents/claude/`; on Windows `%USERPROFILE%\\Documents\\claude\\`), resolving the home directory at run time instead of assuming a user name.",
+        "otherwise the current workspace.",
         name,
     )
     body = replace_required(body, "~/Documents/claude/paper-reading/<topic>/", "<workspace>/paper-reading/<topic>/", name)
