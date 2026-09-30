@@ -1,0 +1,6 @@
+{
+  "name": "paper-reading",
+  "description": "Read a paper as part of its whole research cluster and turn it into interactive teaching material (reading), produce a bilingual annotated reading of the main paper (annotate), and run its labs on real dataset samples with a Python backend (presentation).",
+  "version": "1.0.0",
+  "author": { "name": "linchen1107" }
+}
