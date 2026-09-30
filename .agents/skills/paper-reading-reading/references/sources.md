@@ -115,6 +115,8 @@ The user then asked to improve the layout and interface. Screenshots showed line
 
 The user then asked for the view after clicking a knowledge point to be improved. Measured in a headless browser, opening an address with #kp-A6 landed back at the overview, because the formulas, map and plots drawn after the jump changed the page height; and once there, the controls, 6 to 15 formula steps and the plots took more than a screen, so changing a control meant scrolling away from its result. Changes: every jump (sidebar, map, links, an address with #) lands after drawing is done and highlights its target, measured at 14 px from the top in all three cases; a demo is two columns on wide screens, controls and steps on the left and results on the right; each knowledge point has a bar with its formulas, the previous and next point and the formula map.
 
+The user then asked for the paper's real figures instead of screenshots. `extract_figures.py` had rendered each figure region at 150 DPI, a picture of the page; in LUNA, Fig. 6 is a 2023 × 684 JPEG embedded in the PDF and the other eight figures are vector drawings. Changes: the script also writes `fig<N>-real.*`, the embedded bitmap as stored or the vector drawing cropped to SVG with the page content outside the figure removed and a 4 pt margin that never reaches the caption; `fig<N>.png` stays as a reading copy; pages (reading and annotate) show only the real files, and `check_page.py` fails any page figure that is not one.
+
 A research platform whose backend had started but reported a missing framework and showed a placeholder data slice illustrates what "not done" means for a real backend.
 
 ## Short-video posts used

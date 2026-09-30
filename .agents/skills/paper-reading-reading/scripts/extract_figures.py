@@ -6,8 +6,14 @@ Writes to <out_dir>:
   text.txt        the whole text layer, with "===== PAGE n =====" markers
   sections.tsv    line in text.txt, page, heading: read one section with an
                   offset instead of the whole text
-  fig<N>.png      one image per captioned figure, caption included (150 DPI)
-  figures.tsv     figure, page, status (ok / not found), bbox, caption start
+  fig<N>.png      one image per captioned figure, caption included (150 DPI);
+                  a reading copy for looking at the figure in context, not for pages
+  fig<N>-real.*   the figure itself, without its caption, as the paper holds it:
+                  the original embedded bitmap at its own resolution when the
+                  figure is one raster image (.jpeg / .png), otherwise the vector
+                  drawing cropped to the figure (.svg, text as outlines)
+  figures.tsv     figure, page, status (ok / not found), bbox, caption start,
+                  kind (raster / vector), real file
 
 A figure is found from its caption ("Fig. 3:", "Figure 3.", "Fig. A.1:"):
 vector drawings and raster images next to the caption are joined, with their
@@ -87,8 +93,50 @@ def find_figure(page, cap_rect, blocks, graphics):
             if r.intersects(near) and not region.contains(r):
                 region.include_rect(r)
                 grown = True
+    # a small margin so glyphs at the edge are not cut, never reaching into the caption
+    art = fitz.Rect(region.x0 - 4, region.y0 - 4, region.x1 + 4, region.y1 + 4) & page.rect
+    if cap_rect.y0 >= region.y1:
+        art.y1 = min(art.y1, cap_rect.y0 - 0.5)
+    elif cap_rect.y1 <= region.y0:
+        art.y0 = max(art.y0, cap_rect.y1 + 0.5)
     region.include_rect(cap_rect)
-    return region & page.rect
+    return region & page.rect, art
+
+
+def save_real(doc, pno, page, art, out, num):
+    """Save the figure as the paper holds it: the embedded bitmap, or the vector drawing as SVG."""
+    area = max(art.width * art.height, 1)
+    for info in page.get_image_info(xrefs=True):
+        r = fitz.Rect(info["bbox"]) & art
+        if info.get("xref") and r.width * r.height >= 0.85 * area:
+            x = doc.extract_image(info["xref"])
+            if x and x["ext"] in ("png", "jpeg", "jpg") and not x.get("smask"):
+                path = out / f"fig{num}-real.{x['ext']}"
+                path.write_bytes(x["image"])
+            else:  # other codecs or a transparency mask: the same pixels, stored as PNG
+                pix = fitz.Pixmap(doc, info["xref"])
+                if x and x.get("smask"):
+                    pix = fitz.Pixmap(pix, fitz.Pixmap(doc, x["smask"]))
+                if pix.n - pix.alpha > 3:
+                    pix = fitz.Pixmap(fitz.csRGB, pix)
+                path = out / f"fig{num}-real.png"
+                pix.save(path)
+            return "raster", path.name
+    # vector: copy the page, remove what lies outside the figure, crop, and write SVG
+    tmp = fitz.open()
+    tmp.insert_pdf(doc, from_page=pno, to_page=pno)
+    q, R = tmp[0], tmp[0].rect
+    for r in (fitz.Rect(R.x0, R.y0, R.x1, art.y0), fitz.Rect(R.x0, art.y1, R.x1, R.y1),
+              fitz.Rect(R.x0, art.y0, art.x0, art.y1), fitz.Rect(art.x1, art.y0, R.x1, art.y1)):
+        if not r.is_empty:
+            q.add_redact_annot(r)
+    q.apply_redactions(images=fitz.PDF_REDACT_IMAGE_PIXELS,
+                       graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_COVERED,
+                       text=fitz.PDF_REDACT_TEXT_REMOVE)
+    q.set_cropbox(art & q.mediabox)
+    path = out / f"fig{num}-real.svg"
+    path.write_text(q.get_svg_image(text_as_path=True), encoding="utf-8")
+    return "vector", path.name
 
 
 NUMBER_ONLY = re.compile(r"^\d+(?:\.\d+){0,2}$")
@@ -136,20 +184,22 @@ def main(pdf, out_dir):
             seen.add(num)
             cap_rect = fitz.Rect(c[:4])
             start = " ".join(c[4].split())[:80]
-            region = find_figure(page, cap_rect, blocks, graphics)
-            if region is None:
-                rows.append(f"{num}\t{pno}\tnot found\t\t{start}")
+            found = find_figure(page, cap_rect, blocks, graphics)
+            if found is None:
+                rows.append(f"{num}\t{pno}\tnot found\t\t{start}\t\t")
                 continue
+            region, art = found
             page.get_pixmap(clip=region, dpi=150).save(out / f"fig{num}.png")
+            kind, real = save_real(doc, pno - 1, page, art, out, num)
             box = ",".join(str(round(v)) for v in region)
-            rows.append(f"{num}\t{pno}\tok\t{box}\t{start}")
+            rows.append(f"{num}\t{pno}\tok\t{box}\t{start}\t{kind}\t{real}")
     full = "\n".join(text)
     (out / "text.txt").write_text(full, encoding="utf-8")
     heads = sections(full.split("\n"))
     (out / "sections.tsv").write_text(
         "line\tpage\theading\n" + "\n".join(heads) + "\n", encoding="utf-8")
     (out / "figures.tsv").write_text(
-        "figure\tpage\tstatus\tbbox\tcaption\n" + "\n".join(rows) + "\n", encoding="utf-8")
+        "figure\tpage\tstatus\tbbox\tcaption\tkind\treal\n" + "\n".join(rows) + "\n", encoding="utf-8")
     found = sum("\tok\t" in r for r in rows)
     print(f"{len(doc)} pages, {len(heads)} headings, {len(rows)} captioned figures, "
           f"{found} extracted -> {out}")

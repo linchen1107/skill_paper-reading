@@ -51,7 +51,12 @@
   .legend { display: flex; gap: 14px; font-size: 13px; margin: 2px 0 10px; }
   .note { color: var(--muted); font-size: 13px; }
   .error { color: #f87171; }
-  .figure img { max-width: 100%; border: 1px solid var(--line); background: #fff; }
+  .figure { margin: 14px 0; max-width: 820px; }
+  .figure img { display: block; width: 100%; height: auto; background: #fff; border-radius: 6px; border: 1px solid var(--line); padding: 8px; }
+  .figure figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .fig-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; max-width: none; }
+  .fig-row.two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .fig-row .figure { margin: 0; max-width: none; }
   .summary p { margin: 6px 0; }
   /* reading width: about 45 Chinese characters per line */
   main > section > p, main > section > ul, main > section > ol, .kp dl, .sub { max-width: 50em; }
@@ -150,7 +155,8 @@
     <p class="src">原論文位置：Section …；相關論文：作者 年份</p>
     <dl><dt>生活例子</dt><dd>…</dd><dt>困難</dt><dd>…</dd><dt>傳統作法</dt><dd>…</dd>
         <dt>論文的方法</dt><dd>…</dd><dt>延伸</dt><dd>…</dd></dl>
-    <div class="demo" id="demo-1"></div>   沒有可計算的內容時，改放 <div class="figure">原論文圖或小表</div>，並寫出原因
+    <div class="demo" id="demo-1"></div>   沒有可計算的內容時，改放原論文圖或小表，並寫出原因。論文圖一律用真實圖檔：
+       <figure class="figure"><a href="figs/<short>-fig3-real.svg"><img src="figs/<short>-fig3-real.svg"></a><figcaption>原論文 Fig. 3（p.8）：…</figcaption></figure>
   </section> -->
 </section>
 

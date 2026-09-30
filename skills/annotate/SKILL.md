@@ -58,7 +58,7 @@ The body has `padding-top` large enough that neither bar covers content (about 1
 
 **Figures, tables and equations** appear as their own rows, at the point where the text first discusses them:
 
-- Figures: the left cell shows the extracted `fig<N>.png`, with the caption in English and Chinese.
+- Figures: the left cell shows the figure as the paper holds it, `fig<N>-real.*` (the original bitmap or the vector SVG, never the screenshot copy `fig<N>.png`), with the caption in English and Chinese.
 - Tables: rebuilt as an HTML table from the text layer, with the caption in English and Chinese; cells the text layer leaves unclear are marked 尚未確認.
 - The right card says what it shows, which claim it supports, and whether the text's claim matches what the image actually shows.
 - Equations are shown as images or typeset, and each symbol is explained in the card.

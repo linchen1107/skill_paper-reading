@@ -15,7 +15,8 @@ per knowledge point:
   無示範   the section has no demo (it must say why on the page)
 The page as a whole also fails when the formula layer is incomplete (no formula
 sections or map, a map node pointing nowhere, a formula section missing from the
-map, an empty symbol table, a KaTeX error or an untypeset formula), when no
+map, an empty symbol table, a KaTeX error or an untypeset formula), when a figure
+of the paper is a screenshot instead of its fig<N>-real file, when no
 section is marked data-traditional="1",
 a map entry has no section, or the text contains unconfirmed wording
 (尚未確認, 待驗證, 還沒確認), which belongs in the paper notes instead.
@@ -137,6 +138,13 @@ def main(topic_dir):
     if f.get("texFallback"):
         problems.append(f"{f['texFallback']} 個公式沒有排版（katex/ 沒有載入）")
     print(f"公式：{f.get('sections', 0)} 節、關係圖 {f.get('mapNodes', 0)} 個方塊、符號 {f.get('symbols', 0)} 個")
+    figs = res.get("figures", [])
+    for fg in figs:
+        if not fg["ok"]:
+            problems.append("論文圖用了截圖，應改用 fig<N>-real.*: " + fg["src"])
+        elif not fg["loaded"]:
+            problems.append("論文圖載入失敗: " + fg["src"])
+    print(f"論文圖：{len(figs)} 張，真實圖檔 {sum(f['ok'] for f in figs)} 張")
     for p in problems:
         bad += 1
         print("未通過：" + p)
