@@ -33,7 +33,8 @@
                   formula: sec.dataset.formula === '1', traditional: sec.dataset.traditional === '1', anim: false, animSteps: 0 };
       if (demo) {
         // compare the output only; the value shown next to a slider always changes
-        const area = demo.querySelector('.out') || demo;
+        const outs = [...demo.querySelectorAll('.out')];
+        const area = { get innerText() { return (outs.length ? outs : [demo]).map(o => o.innerText).join('|'); }, querySelectorAll: q => (outs.length ? outs : [demo]).flatMap(o => [...o.querySelectorAll(q)]) };
         demo.querySelectorAll('input, select').forEach(inp => {
           r.controls++;
           const before = snap(area);

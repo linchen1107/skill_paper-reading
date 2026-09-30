@@ -113,6 +113,8 @@ The user showed photos of a formula walkthrough of another paper and asked for t
 
 The user then asked to improve the layout and interface. Screenshots showed lines of about 60 characters, plots using half their width with raw tick values and overlapping labels, browser-default controls, a crowded cluster table and a 70-item sidebar. Changes: prose limited to about 45 characters per line; key numbers as cards; plots fill their box, two side by side, with readable ticks and title, axis name and legend on separate rows; dark controls; number chips on knowledge points; badges for reading status and results; scrolling tables with a fixed first column; a collapsible sidebar, a reading progress bar and a back-to-top button.
 
+The user then asked for the view after clicking a knowledge point to be improved. Measured in a headless browser, opening an address with #kp-A6 landed back at the overview, because the formulas, map and plots drawn after the jump changed the page height; and once there, the controls, 6 to 15 formula steps and the plots took more than a screen, so changing a control meant scrolling away from its result. Changes: every jump (sidebar, map, links, an address with #) lands after drawing is done and highlights its target, measured at 14 px from the top in all three cases; a demo is two columns on wide screens, controls and steps on the left and results on the right; each knowledge point has a bar with its formulas, the previous and next point and the formula map.
+
 A research platform whose backend had started but reported a missing framework and showed a placeholder data slice illustrates what "not done" means for a real backend.
 
 ## Short-video posts used

@@ -216,6 +216,25 @@
 #pr-top{position:fixed;right:22px;bottom:22px;width:40px;height:40px;border-radius:50%;border:1px solid #334155;background:#111820;color:#67e8f9;font-size:18px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
 #pr-top.show{opacity:1;pointer-events:auto}
 #pr-top:hover{border-color:#67e8f9}
+.pr-flash{animation:prflash 2.2s ease-out}
+@keyframes prflash{0%,35%{box-shadow:0 0 0 2px #67e8f9,0 0 26px rgba(103,232,249,.45)}100%{box-shadow:0 0 0 0 transparent}}
+.kp-nav{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;margin:6px 0 10px;font-size:13px;color:#94a3b8}
+.kp-nav a{text-decoration:none}
+.kp-eqs a.kp-eq{display:inline-block;margin:0 3px;padding:0 7px;border:1px solid #155e75;border-radius:4px;font:12px/1.8 ui-monospace,Consolas,monospace}
+.kp-step a{margin-left:14px;color:#cbd5e1}
+.kp-step a:hover,.kp-eqs a:hover{color:#67e8f9}
+.demo.split{display:grid;grid-template-columns:minmax(330px,5fr) 7fr;gap:14px;align-items:start}
+.demo.split.no-steps{grid-template-columns:1fr}
+.demo-left{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto;min-width:0}
+.demo-right{min-width:0}
+.demo-left .controls{flex-direction:column;align-items:stretch;gap:8px;padding:10px;border:1px solid #1e293b;border-radius:8px;background:#0b1220}
+.demo-left .controls label{display:grid;grid-template-columns:minmax(6em,40%) 1fr auto;align-items:center;gap:8px}
+.demo-left .controls input[type=range]{width:100%;min-width:80px}
+.demo-left .controls select{justify-self:start}
+.demo.split.no-steps .demo-left{position:static;max-height:none}
+.demo.split.no-steps .demo-left .controls{flex-direction:row;flex-wrap:wrap}
+.demo.split.no-steps .demo-left .controls label{display:flex}
+@media (max-width:1100px){.demo.split{grid-template-columns:1fr}.demo-left{position:static;max-height:none}}
 .plots{display:grid;gap:12px;margin:10px 0}
 .plots.two{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
 .plot canvas{display:block;border-radius:6px;border:1px solid #1e293b}
@@ -301,7 +320,7 @@
         const title = p.n.tex ? PR.tex(p.n.tex) : (p.n.title || '');
         const tag = p.n.tag ? `<span class="ntag" style="${p.n.kind === 'target' || p.n.kind === 'algo' ? 'color:#fbbf24' : ''}">${p.n.tag}</span>` : '';
         g.append(fo(p.x, p.y, p.w, p.h, `${tag}<b>${title}</b>${p.n.tex && p.n.title ? `<span>${p.n.title}</span>` : ''}`, 'nbox'));
-        const go = () => { if (p.n.href) { const t = document.querySelector(p.n.href); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); history.replaceState(null, '', p.n.href); } };
+        const go = () => { if (p.n.href) PR.jump(p.n.href, true); };
         g.addEventListener('click', go); g.addEventListener('keydown', ev => { if (ev.key === 'Enter') go(); });
         svg.append(g);
       });
@@ -369,8 +388,59 @@
     window.addEventListener('scroll', upd, { passive: true }); upd();
   }
 
+  // ---------- Jumping to a section: land on it after everything has been drawn, and show where you landed ----------
+  PR.jump = function (hash, smooth, push) {
+    let t = null;
+    try { t = document.querySelector(decodeURIComponent(hash)); } catch (e) { t = null; }
+    if (!t) return false;
+    const y = t.getBoundingClientRect().top + window.scrollY - 14;
+    window.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' });
+    if (push) history.pushState(null, '', hash); else history.replaceState(null, '', hash);
+    t.classList.remove('pr-flash'); void t.offsetWidth; t.classList.add('pr-flash');
+    setTimeout(() => t.classList.remove('pr-flash'), 2200);
+    return true;
+  };
+  function wireLinks() {
+    document.addEventListener('click', ev => {
+      const a = ev.target.closest && ev.target.closest('a[href^="#"]');
+      if (!a || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
+      const h = a.getAttribute('href');
+      if (h.length > 1 && PR.jump(h, true, true)) ev.preventDefault();
+    });
+    window.addEventListener('popstate', () => { if (location.hash) PR.jump(location.hash, false); });
+    // an address with #… lands after the demos, formulas and fonts have changed the page height
+    if (location.hash) {
+      const land = () => PR.jump(location.hash, false);
+      window.addEventListener('load', () => { land(); setTimeout(land, 300); });
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(land, 50));
+    }
+  }
+
+  // ---------- Navigation bar on each knowledge point: its formulas, previous and next, back to the map ----------
+  function kpNav() {
+    const kps = [...document.querySelectorAll('section.kp[id]')];
+    kps.forEach((k, i) => {
+      if (k.querySelector('.kp-nav')) return;
+      const nav = el('div', { class: 'kp-nav' });
+      const eqs = [...document.querySelectorAll('section.eq-sec[id]')].filter(e => e.querySelector(`a[href="#${k.id}"]`));
+      if (eqs.length) {
+        const f = el('span', { class: 'kp-eqs' }, '對應公式：');
+        eqs.forEach(e => f.append(el('a', { href: '#' + e.id, class: 'kp-eq', text: e.dataset.tag || e.id })));
+        nav.append(f);
+      }
+      const tag = x => (x.dataset.kp || x.id.replace(/^kp-/, ''));
+      const side = el('span', { class: 'kp-step' });
+      if (kps[i - 1]) side.append(el('a', { href: '#' + kps[i - 1].id, text: '← ' + tag(kps[i - 1]) }));
+      if (document.getElementById('map-formulas')) side.append(el('a', { href: '#map-formulas', text: '公式關係圖' }));
+      if (kps[i + 1]) side.append(el('a', { href: '#' + kps[i + 1].id, text: tag(kps[i + 1]) + ' →' }));
+      nav.append(side);
+      const src = k.querySelector('.src');
+      (src || k.querySelector('h3')).after(nav);
+    });
+  }
+
   function boot() {
-    ensureCss(); renderTexIn(document); buildToc(); pageChrome();
+    ensureCss(); renderTexIn(document); buildToc(); pageChrome(); kpNav(); wireLinks();
     let t = null, w0 = window.innerWidth;
     window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => {
       if (Math.abs(window.innerWidth - w0) < 40) return; w0 = window.innerWidth;
@@ -381,7 +451,7 @@
 
   // Formula animation: frames appear one at a time, the current one highlighted,
   // with the numbers of this run filled in; a frame may carry LaTeX (tex) and a plot that is redrawn.
-  function renderAnim(box, anim, d) {
+  function renderAnim(box, anim, d, plotHost) {
     ensureAnimCss();
     const wrap = el('div', { class: 'anim' });
     if (anim.title) wrap.append(el('div', { class: 'anim-title', text: anim.title }));
@@ -394,8 +464,9 @@
     bar.append(bStart, bPrev, bPlay, bNext, pos);
     const list = el('ol', { class: 'anim-frames' });
     const plotBox = el('div', { class: 'anim-plot' });
-    wrap.append(bar, list, plotBox);
+    wrap.append(bar, list);
     box.append(wrap);
+    (plotHost || wrap).append(plotBox);
     const F = anim.frames || [];
     let i = F.length - 1;
     function show() {
@@ -425,6 +496,8 @@
     });
     show();
   }
+
+  const root = id => document.getElementById('demo-' + id);
 
   PR.demo = function (id, spec) {
     const params = {};
@@ -457,18 +530,22 @@
           });
           d.panel.append(el('label', {}, c.label + ' ', input, val));
         });
-        d.out = el('div', { class: 'out' });
-        root.append(d.panel, d.out);
+        // two columns on wide screens: controls and formula steps stay in view on the left, results on the right
+        d.outL = el('div', { class: 'out out-steps' });
+        d.out = el('div', { class: 'out out-main' });
+        root.classList.add('split');
+        root.append(el('div', { class: 'demo-left' }, d.panel, d.outL), el('div', { class: 'demo-right' }, d.out));
       }
       draw();
     }
 
     function draw() {
       if (d.timer) { clearInterval(d.timer); d.timer = null; }
-      d.out.innerHTML = '';
+      d.out.innerHTML = ''; d.outL.innerHTML = '';
       try {
         const r = spec.compute({ ...params }) || {};
-        if (r.anim) renderAnim(d.out, r.anim, d);
+        if (r.anim) renderAnim(d.outL, r.anim, d, d.out);
+        root(id).classList.toggle('no-steps', !r.anim);
         if (r.plots && r.plots.length) {
           const grid = el('div', { class: 'plots' + (r.plots.length > 1 ? ' two' : '') });
           d.out.append(grid);
