@@ -20,8 +20,11 @@
  *
  * Formulas: <div class="tex-block">\ca{L_{Adv}} = …</div> or <span class="tex">…</span> hold LaTeX and are
  * typeset with katex/ (colour macros \ca \cb \cc \cd); anim frames take tex: '…' as well.
+ * Key formula card, placed after a demo: <div class="keyeq"> with a plain sentence whose coloured words
+ * (<span class="w-a">…</span>, w-b, w-c, w-d) match the formula's \ca \cb \cc \cd terms; pointing at one marks both.
  * Formula map (how the formulas connect; nodes jump to their section): PR.formulaMap('fmap', {...}),
- * spec documented above the function below. The left sidebar #toc is built from sections with data-toc.
+ * spec documented above the function below. The left sidebar #toc is built from sections with data-toc;
+ * a group with data-toc-open starts expanded, and groups inside #appendix are set apart and dimmed.
  *
  * A hand calculation the demo must reproduce:
  *   PR.check('3', 'α = 1 時增益不變', () => ({expected: 0, actual: f(1), tol: 1e-9}));
@@ -192,6 +195,28 @@
   }
   PR.renderTex = renderTexIn;
 
+  // ---------- Key formula card: a plain sentence whose coloured words match the formula's coloured terms ----------
+  // <div class="keyeq"> … <p class="plain"><span class="w-a">…</span> …</p><div class="tex-block">\ca{…}</div> …
+  // w-a ↔ \ca, w-b ↔ \cb, w-c ↔ \cc, w-d ↔ \cd. Pointing at a word marks its term in the formula, and back.
+  PR.TERM_HEX = { 'w-a': '67e8f9', 'w-b': 'fbbf24', 'w-c': 'c4b5fd', 'w-d': '86efac' };
+  PR.termsIn = function (card, cls) {
+    const hex = PR.TERM_HEX[cls];
+    return [...card.querySelectorAll('.katex [style*="color"]')].filter(n => (n.getAttribute('style') || '').toLowerCase().includes(hex));
+  };
+  function linkTerms() {
+    document.querySelectorAll('.keyeq').forEach(card => {
+      if (card.dataset.linked) return;
+      card.dataset.linked = '1';
+      Object.keys(PR.TERM_HEX).forEach(cls => {
+        const words = [...card.querySelectorAll('.plain .' + cls)];
+        const all = words.concat(PR.termsIn(card, cls));
+        const on = v => { all.forEach(n => n.classList.toggle('pr-hl', v)); card.classList.toggle('pr-focus', v); };
+        all.forEach(n => { n.addEventListener('mouseenter', () => on(true)); n.addEventListener('mouseleave', () => on(false)); });
+        words.forEach(w => { w.tabIndex = 0; w.addEventListener('focus', () => on(true)); w.addEventListener('blur', () => on(false)); });
+      });
+    });
+  }
+
   // ---------- Styles carried by the widgets, so they look right on any page ----------
   const WIDGET_CSS = `.anim{border:1px solid #334155;border-radius:8px;padding:10px 12px;margin:8px 0;background:#0b1220}
 .anim-title{font-weight:700;margin-bottom:6px;color:#e2e8f0}
@@ -265,7 +290,27 @@ main .figure img{cursor:zoom-in}
 .fmap .nbox .ntag{font-size:13px;color:#94a3b8;font-family:ui-monospace,Consolas,monospace}
 .fmap .nbox b{font-weight:700}
 .fmap .elabel{font-size:13px;line-height:1.3;color:#cbd5e1;text-align:center;height:100%;display:flex;align-items:flex-end;justify-content:center}
-.fmap .lane{font-size:13px;fill:#94a3b8;font-family:ui-monospace,Consolas,monospace}`;
+.fmap .lane{font-size:13px;fill:#94a3b8;font-family:ui-monospace,Consolas,monospace}
+.keyeq{border:1px solid #334155;border-left:3px solid #67e8f9;border-radius:8px;background:#0e1620;padding:12px 18px 10px;margin:16px 0 4px}
+.keyeq-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;font-size:13px;color:#94a3b8}
+.keyeq-head b{color:#67e8f9;font-weight:600;font-size:14px}
+.keyeq .plain{font-size:16px;line-height:1.9;margin:6px 0 4px;max-width:50em;color:#e2e8f0}
+.keyeq .tex-block{overflow-x:auto;overflow-y:hidden;font-size:1.12em;padding:6px 0 2px}
+.keyeq details{margin-top:4px;font-size:14px;color:#cbd5e1}
+.keyeq summary{cursor:pointer;color:#94a3b8;width:max-content}
+.keyeq summary:hover{color:#67e8f9}
+.keyeq dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 16px;margin:8px 0 4px}
+.keyeq dd{margin:0}
+.w-a{color:#67e8f9}.w-b{color:#fbbf24}.w-c{color:#c4b5fd}.w-d{color:#86efac}
+.w-a,.w-b,.w-c,.w-d{font-weight:600;border-bottom:1px dashed currentColor;cursor:help;border-radius:2px}
+.pr-hl{background:rgba(148,163,184,.22);box-shadow:0 0 0 2px rgba(148,163,184,.22);border-radius:3px}
+.katex .pr-hl{background:none;box-shadow:none;text-shadow:0 0 10px currentColor}
+.keyeq.pr-focus .tex-block .katex{color:#64748b}
+.keyeq.pr-focus .katex [style*="color"]:not(.pr-hl){opacity:.35}
+.keyeq .tex-block .katex *{transition:opacity .15s}
+.toc-grp:not(.toc-appx)+.toc-appx{margin-top:10px;padding-top:10px;border-top:1px solid #2b3643}
+#toc .toc-appx a.toc-group{color:#64748b}
+@media (max-width:860px){.keyeq dl{grid-template-columns:1fr}}`;
   function ensureCss() {
     if (document.getElementById('pr-widget-css')) return;
     const st = el('style', { id: 'pr-widget-css' }); st.textContent = WIDGET_CSS; document.head.append(st);
@@ -369,6 +414,8 @@ main .figure img{cursor:zoom-in}
         const head = el('div', { class: 'toc-head' }, caret, a);
         sub = el('div', { class: 'toc-sub' });
         caret.addEventListener('click', () => grp.classList.toggle('open'));
+        if (s.hasAttribute('data-toc-open')) grp.classList.add('open');
+        if (s.closest('#appendix')) grp.classList.add('toc-appx');
         grp.append(head, sub); list.append(grp);
       } else (sub || list).append(a);
     });
@@ -439,7 +486,7 @@ main .figure img{cursor:zoom-in}
       const nav = el('div', { class: 'kp-nav' });
       const eqs = [...document.querySelectorAll('section.eq-sec[id]')].filter(e => e.querySelector(`a[href="#${k.id}"]`));
       if (eqs.length) {
-        const f = el('span', { class: 'kp-eqs' }, '對應公式：');
+        const f = el('span', { class: 'kp-eqs' }, '完整公式（附錄）：');
         eqs.forEach(e => f.append(el('a', { href: '#' + e.id, class: 'kp-eq', text: e.dataset.tag || e.id })));
         nav.append(f);
       }
@@ -517,7 +564,7 @@ main .figure img{cursor:zoom-in}
   }
 
   function boot() {
-    ensureCss(); renderTexIn(document); buildToc(); pageChrome(); kpNav(); wireLinks(); lightbox(); labLink();
+    ensureCss(); renderTexIn(document); linkTerms(); buildToc(); pageChrome(); kpNav(); wireLinks(); lightbox(); labLink();
     let t = null, w0 = window.innerWidth;
     window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => {
       if (Math.abs(window.innerWidth - w0) < 40) return; w0 = window.innerWidth;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><!-- 論文短名 -->公式圖解</title>
+<title><!-- 論文短名 -->論文圖解</title>
 <link rel="stylesheet" href="katex/katex.min.css">
 <style>
   :root { --bg: #0f1419; --panel: #151c24; --card: #111820; --ink: #e2e8f0; --muted: #94a3b8; --line: #2b3643;
@@ -24,7 +24,7 @@
   h1, h2, h3 { font-family: var(--serif); letter-spacing: .02em; }
   h1 { font-size: 30px; margin: 4px 0 6px; }
   h2 { font-size: 26px; margin: 56px 0 6px; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
-  h2 .mark { color: var(--accent); margin-right: 10px; font-family: sans-serif; }
+  h2 .mark { color: var(--accent); margin-right: 10px; font-family: sans-serif; font-size: .7em; vertical-align: .15em; }
   h3 { font-size: 20px; margin: 30px 0 8px; display: flex; align-items: center; gap: 10px; }
   .chip { display: inline-block; border: 1px solid var(--accent); color: var(--accent); border-radius: 4px;
           padding: 0 7px; font: 13px/1.7 ui-monospace, Consolas, monospace; }
@@ -93,10 +93,55 @@
   <p class="meta"><!-- 作者 年份，出處；閱讀紀錄連到 papers/<short>.md --></p>
 </header>
 
-<!-- 左側目錄由 widgets.js 依 data-toc 自動產生：data-toc="group" 是分組標題，data-toc="item" 是項目，data-tag 是式號或附錄編號 -->
+<!-- 左側目錄由 widgets.js 依 data-toc 自動產生：data-toc="group" 是分組標題，data-toc="item" 是項目，data-tag 是編號 -->
+<!-- 閱讀順序：結論 → 問題與失敗案例 → 傳統作法 → 論文群 → 論文想法 → 證據 → 知識點（先操作，再看核心公式）→ 附錄（完整公式）。
+     故事線不放獨立公式；公式只出現在知識點的核心公式卡與附錄。 -->
 
-<section id="overview" data-toc="group" data-toc-name="總覽"><h2><span class="mark">○</span>總覽</h2>
-  <p class="sub">先看公式彼此怎麼接起來，再逐條細讀。</p>
+<section id="summary" class="summary" data-toc="group" data-toc-open data-toc-name="重點整理與故事線"><h2>重點整理</h2>
+  <!-- 3 句：核心問題；證據支持的改善；仍未解決的問題 -->
+</section>
+
+<!-- 故事線中的關鍵數字用 <div class="stats"><div class="stat"><b>0.84</b><span>說明（出處）</span></div>…</div>；論文名稱本身就是連到筆記的連結 -->
+<section id="s1" data-toc="item" data-tag="1"><h2>1. 生活中的例子與困難</h2><!-- 第一段是一個具體的失敗案例：原本希望得到什麼、實際發生什麼、造成什麼影響（出處）；接著用生活例子說明它為什麼難 --></section>
+<section id="s2" data-toc="item" data-tag="2"><h2>2. 傳統作法與它的限制</h2><!-- --></section>
+<section id="s3" data-toc="item" data-tag="3"><h2>3. 論文群與研究缺口</h2><!-- --></section>
+<section id="s4" data-toc="item" data-tag="4"><h2>4. 核心想法與方法</h2><!-- 用文字與原論文流程圖講完整條方法；每一步連到對應知識點 --></section>
+<section id="s5" data-toc="item" data-tag="5"><h2>5. 證據與改善幅度</h2><!-- --></section>
+<section id="s6" data-toc="item" data-tag="6"><h2>6. 已解決與未解決</h2><!-- --></section>
+
+<section id="map" data-toc="group" data-toc-name="知識點地圖"><h2>知識點地圖</h2>
+  <!-- 依組別列出每個知識點：編號、名稱、原論文位置，連到 #kp-<N>；核心公式所在的知識點標 <span class="badge mid">核心公式</span> -->
+</section>
+
+<section id="kps" data-toc="group" data-toc-name="知識點與互動"><h2>知識點與互動</h2>
+  <!-- 每個知識點一個區塊，順序固定：生活例子、困難、傳統作法、論文的方法、延伸 → 示範（代入數字逐步算）→ 核心公式卡（只有核心公式才有）。
+       有公式的知識點加 data-formula="1"，它的示範必須回傳 anim（公式動畫）；
+       示範傳統作法的知識點加 data-traditional="1"，放在論文方法之前：
+  <section class="kp" id="kp-1" data-kp="1" data-formula="1" data-toc="item" data-tag="1">
+    <h3><span class="chip">1</span>名稱</h3>   傳統作法用 <span class="chip trad">T1</span>
+    <p class="src">原論文位置：Section …；相關論文：作者 年份</p>
+    <dl><dt>生活例子</dt><dd>…</dd><dt>困難</dt><dd>…</dd><dt>傳統作法</dt><dd>…</dd>
+        <dt>論文的方法</dt><dd>…</dd><dt>延伸</dt><dd>…</dd></dl>
+    <div class="demo" id="demo-1"></div>   沒有可計算的內容時，改放原論文圖或小表，並寫出原因。論文圖一律用真實圖檔：
+       <figure class="figure"><a href="figs/<short>-fig3-real.svg"><img src="figs/<short>-fig3-real.svg"></a><figcaption>原論文 Fig. 3（p.8）：…</figcaption></figure>
+    核心公式卡（全頁 1 到 5 張），放在示範之後：先看過數字，再看一般式。白話裡的著色詞和公式裡同色的項一一對應：
+    <div class="keyeq">
+      <div class="keyeq-head"><b>核心公式 (2)</b><span>p.4 · §III-B　剛才示範的計算，寫成一般式</span></div>
+      <p class="plain">一句白話，例如：<span class="w-a">轉移機率</span>等於<span class="w-b">走到下一格的次數</span>除以<span class="w-c">離開這一格的總次數</span>。</p>
+      <div class="tex-block">\ca{P(a,b)} = \frac{\cb{\#(a \to b)}}{\cc{\#(a \to \cdot)}}</div>
+      <details><summary>符號與出處</summary><dl><dt><span class="tex">a</span></dt><dd>…</dd></dl><p class="src">完整推導：<a href="#eq-2">附錄 (2)</a></p></details>
+    </div>
+  </section> -->
+</section>
+
+<section id="cluster" data-toc="group" data-toc-name="論文群比較"><h2>論文群比較</h2>
+  <div class="table-wrap"><table><tr><th>論文</th><th>角色</th><th>解決的困難</th><th>核心設計</th><th>證據（出處）</th><th>留下的問題</th><th>閱讀狀態</th></tr>
+  <!-- 一篇一列；論文寫作者與年份，連到 papers/<short>.md；閱讀狀態用 <span class="badge ok">已讀全文</span>、badge mid 已讀相關段落、badge low 部分閱讀或待讀 --></table></div>
+</section>
+
+<div id="appendix">
+<section id="overview" data-toc="group" data-toc-name="附錄：公式總覽"><h2><span class="mark">附錄</span>公式總覽</h2>
+  <p class="sub">給想深入的讀者：論文的每一條公式、它們怎麼接起來、每個符號的意思。正文只需要知識點裡的核心公式。</p>
   <section id="map-formulas" data-toc="item" data-tag="地圖" data-toc-name="公式之間的關係">
     <h3><span class="chip">地圖</span>公式之間的關係</h3>
     <p class="sub">點方塊可跳到該式。</p>
@@ -110,8 +155,8 @@
   </section>
 </section>
 
-<!-- 公式逐條：依推導順序分組，每組一個 h2；每個式子一個 section.eq：
-<section id="grp-1" data-toc="group" data-toc-name="一、訓練目標"><h2><span class="mark">→</span>訓練目標：從 A 到 B</h2>
+<!-- 公式逐條：依推導順序分組，每組一個 h2（名稱前加「附錄 · 」）；每個式子一個 section.eq-sec：
+<section id="grp-1" data-toc="group" data-toc-name="附錄 · 訓練目標"><h2><span class="mark">附錄</span>訓練目標：從 A 到 B</h2>
   <p class="sub">正文 §2–§3，附錄 A–D。</p>
   <section class="eq-sec" id="eq-1" data-toc="item" data-tag="(1)">
     <h3><span class="chip">(1)</span>名稱</h3>
@@ -123,42 +168,7 @@
     </div>
   </section>
 </section> -->
-
-<section id="summary" class="summary" data-toc="group" data-toc-name="重點整理"><h2>重點整理</h2>
-  <!-- 3 句：核心問題；證據支持的改善；仍未解決的問題 -->
-</section>
-
-<!-- 故事線中的關鍵數字用 <div class="stats"><div class="stat"><b>0.84</b><span>說明（出處）</span></div>…</div>；論文名稱本身就是連到筆記的連結 -->
-<section id="s1" data-toc="item" data-tag="1"><h2>1. 生活中的例子與困難</h2><!-- --></section>
-<section id="s2" data-toc="item" data-tag="2"><h2>2. 傳統作法與它的限制</h2><!-- --></section>
-<section id="s3" data-toc="item" data-tag="3"><h2>3. 論文群與研究缺口</h2><!-- --></section>
-<section id="s4" data-toc="item" data-tag="4"><h2>4. 核心想法與方法</h2><!-- --></section>
-<section id="s5" data-toc="item" data-tag="5"><h2>5. 證據與改善幅度</h2><!-- --></section>
-<section id="s6" data-toc="item" data-tag="6"><h2>6. 已解決與未解決</h2><!-- --></section>
-
-
-
-<section id="cluster" data-toc="group" data-toc-name="論文群比較"><h2>論文群比較</h2>
-  <div class="table-wrap"><table><tr><th>論文</th><th>角色</th><th>解決的困難</th><th>核心設計</th><th>證據（出處）</th><th>留下的問題</th><th>閱讀狀態</th></tr>
-  <!-- 一篇一列；論文寫作者與年份，連到 papers/<short>.md；閱讀狀態用 <span class="badge ok">已讀全文</span>、badge mid 已讀相關段落、badge low 部分閱讀或待讀 --></table></div>
-</section>
-
-<section id="map" data-toc="group" data-toc-name="知識點地圖"><h2>知識點地圖</h2>
-  <!-- 依組別列出每個知識點：編號、名稱、原論文位置，連到 #kp-<N> -->
-</section>
-
-<section id="kps" data-toc="group" data-toc-name="知識點與互動"><h2>知識點與互動</h2>
-  <!-- 每個知識點一個區塊。有公式的知識點加 data-formula="1"，它的示範必須回傳 anim（公式動畫）；
-       示範傳統作法的知識點加 data-traditional="1"，放在論文方法之前：
-  <section class="kp" id="kp-1" data-kp="1" data-formula="1" data-toc="item" data-tag="1">
-    <h3><span class="chip">1</span>名稱</h3>   傳統作法用 <span class="chip trad">T1</span>
-    <p class="src">原論文位置：Section …；相關論文：作者 年份</p>
-    <dl><dt>生活例子</dt><dd>…</dd><dt>困難</dt><dd>…</dd><dt>傳統作法</dt><dd>…</dd>
-        <dt>論文的方法</dt><dd>…</dd><dt>延伸</dt><dd>…</dd></dl>
-    <div class="demo" id="demo-1"></div>   沒有可計算的內容時，改放原論文圖或小表，並寫出原因。論文圖一律用真實圖檔：
-       <figure class="figure"><a href="figs/<short>-fig3-real.svg"><img src="figs/<short>-fig3-real.svg"></a><figcaption>原論文 Fig. 3（p.8）：…</figcaption></figure>
-  </section> -->
-</section>
+</div>
 
 <section id="checks" data-toc="group" data-toc-name="驗收結果"><h2>驗收結果</h2>
   <table><tr><th>知識點</th><th>操作的控制項</th><th>公式動畫</th><th>對照的手算或參考</th><th>結果</th><th>限制</th></tr>

@@ -73,6 +73,29 @@
       texErrors: document.querySelectorAll('.katex-error').length,
       texFallback: document.querySelectorAll('.tex-fallback').length
     };
+    // key formulas: at most 5, inside a knowledge point, after its demo, with a plain sentence whose coloured
+    // words match coloured terms of the formula; the full formula layer lives in #appendix, the storyline has none
+    out.keyFormulas = [...document.querySelectorAll('.keyeq')].map(c => {
+      const kp = c.closest('section[data-kp]');
+      const demo = kp && kp.querySelector('.demo');
+      const plain = c.querySelector('.plain');
+      const words = plain ? [...plain.querySelectorAll('.w-a, .w-b, .w-c, .w-d')] : [];
+      const cls = w => [...w.classList].find(x => /^w-[abcd]$/.test(x));
+      const unmatched = words.filter(w => !PR.termsIn(c, cls(w)).length).map(w => w.textContent.trim());
+      let hover = false;
+      if (words.length) {
+        words[0].dispatchEvent(new MouseEvent('mouseenter'));
+        hover = PR.termsIn(c, cls(words[0])).some(n => n.classList.contains('pr-hl'));
+        words[0].dispatchEvent(new MouseEvent('mouseleave'));
+      }
+      return { kp: kp ? kp.dataset.kp : null, formulaKp: !!kp && kp.dataset.formula === '1',
+               plain: plain ? plain.innerText.trim().length : 0, words: words.length, unmatched, hover,
+               afterDemo: !!demo && !!(demo.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING),
+               typeset: !!c.querySelector('.tex-block .katex') };
+    });
+    out.storyFormulas = [...document.querySelectorAll('.tex-block')].filter(n => !n.closest('#kps') && !n.closest('#appendix')).length;
+    const fmap = document.querySelector('.fmap');
+    out.overviewInAppendix = !fmap || !!fmap.closest('#appendix');
     // figures of the paper are the real files (original bitmap or vector), not screenshots
     out.figures = [...document.querySelectorAll('main .figure img, main figure img')].map(i => ({ src: i.getAttribute('src') || '', ok: /-real\.(svg|png|jpe?g|gif|webp)$/i.test(i.getAttribute('src') || ''), loaded: i.complete && i.naturalWidth > 0 }));
     // clicking a figure opens it in the popup

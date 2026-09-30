@@ -16,7 +16,11 @@ per knowledge point:
 The page as a whole also fails when the formula layer is incomplete (no formula
 sections or map, a map node pointing nowhere, a formula section missing from the
 map, an empty symbol table, a KaTeX error or an untypeset formula), when a figure
-of the paper is a screenshot instead of its fig<N>-real file, when no
+of the paper is a screenshot instead of its fig<N>-real file, when the key
+formulas break their rules (none, more than 5, outside a knowledge point, before
+its demo, without a plain sentence whose coloured words match the formula),
+when a display formula appears outside the knowledge points and the appendix,
+when the formula map is not in the appendix, when no
 section is marked data-traditional="1",
 a map entry has no section, or the text contains unconfirmed wording
 (尚未確認, 待驗證, 還沒確認), which belongs in the paper notes instead.
@@ -137,7 +141,35 @@ def main(topic_dir):
         problems.append(f"{f['texErrors']} 個公式排版錯誤（.katex-error）")
     if f.get("texFallback"):
         problems.append(f"{f['texFallback']} 個公式沒有排版（katex/ 沒有載入）")
-    print(f"公式：{f.get('sections', 0)} 節、關係圖 {f.get('mapNodes', 0)} 個方塊、符號 {f.get('symbols', 0)} 個")
+    keys = res.get("keyFormulas", [])
+    if f.get("sections") and not keys:
+        problems.append("沒有核心公式卡（.keyeq）：從公式清單選 1 到 5 個，放進對應知識點的示範之後")
+    if len(keys) > 5:
+        problems.append(f"核心公式 {len(keys)} 個，上限 5 個；其餘公式只放附錄")
+    for k in keys:
+        where = f"核心公式卡（{k['kp'] or '不在知識點裡'}）"
+        if not k["kp"]:
+            problems.append(where + "應放在知識點區塊內")
+            continue
+        if not k["formulaKp"]:
+            problems.append(where + "所在的知識點沒有公式動畫（data-formula=\"1\"），讀者看不到代入數字的過程")
+        if not k["afterDemo"]:
+            problems.append(where + "應放在示範之後：先操作、看數字，再看一般式")
+        if not k["plain"]:
+            problems.append(where + "缺少一句白話（.plain）")
+        if not k["words"]:
+            problems.append(where + "的白話沒有著色關鍵詞（w-a 到 w-d）")
+        if k["unmatched"]:
+            problems.append(where + "的關鍵詞在公式裡沒有同色的項: " + "、".join(k["unmatched"]))
+        elif k["words"] and not k["hover"]:
+            problems.append(where + "指向關鍵詞時，公式沒有標出對應的項")
+        if not k["typeset"]:
+            problems.append(where + "的公式沒有排版")
+    if res.get("storyFormulas"):
+        problems.append(f"重點整理、故事線或論文群比較裡有 {res['storyFormulas']} 個獨立公式；公式只放在知識點或附錄")
+    if not res.get("overviewInAppendix", True):
+        problems.append("公式關係圖應放在附錄（#appendix），不要放在頁首")
+    print(f"公式：核心 {len(keys)} 個（上限 5）；附錄 {f.get('sections', 0)} 節、關係圖 {f.get('mapNodes', 0)} 個方塊、符號 {f.get('symbols', 0)} 個")
     figs = res.get("figures", [])
     for fg in figs:
         if not fg["ok"]:
