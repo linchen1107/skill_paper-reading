@@ -53,6 +53,7 @@ These come from the lab's review of how a paper must be reported (see [reference
 | 7 | Do more than the paper; restore what it cut | Background and derivations the paper only names are knowledge points of their own |
 | 8 | Animate the math | Every knowledge point with a formula (`data-formula="1"`) has a formula animation that steps through the computation with this run's numbers |
 | 9 | The page shows understanding, not open questions | The page contains confirmed content only (see "What the page shows") |
+| 10 | Show how the formulas connect, then read them one by one | The page opens with 總覽: a formula map whose boxes (formula number and page) link to every formula section and whose arrows name the step between formulas, and a symbol table (symbol, meaning, the paper's setting); every formula section shows the typeset formula, its location, each symbol explained, and the formulas it comes from and leads to |
 
 ## What the page shows
 
@@ -138,14 +139,17 @@ Do not ask for the reading purpose. If the user did not state it, identify the p
 - **Do more than the paper.** Background and derivations the paper cut for space (for example Gaussianization or spectral whitening mentioned only by name) are also knowledge points.
 - Order by dependency: foundations first, then what builds on them.
 - At the end, check item by item. Group-level completion is not enough: a group can be finished while one of its points is missing.
+- **Formula inventory.** List every numbered equation, definition, theorem and algorithm of the user's paper, and every unnumbered formula the method depends on (including those in appendices it relies on): its number, page and section, its LaTeX, and its links: which formula it comes from and which it leads to, with the step in between named in a few words (adds mutual information, replaces with a lower bound, takes the mean over the state). Also list every symbol with its meaning and the paper's setting for it (value, range, network, with location). These become the formula map, the symbol table and the formula sections of the page.
 
 ## Stage 4: interactive material
 
 All knowledge points live on one page and share one widget library. Start from the plugin's templates; do not write the page layout or the widgets yourself:
 
 - Copy `<plugin>/templates/page.html` to `<topic>/index.html` and fill in its marked places; keep its sections, titles and navigation.
-- Copy `<plugin>/templates/widgets.js` to `<topic>/widgets.js` unchanged. It provides sliders, option lists and checkboxes, line, bar and heat-map plots, formula animations, a static step table, and hand-calculation checks; its header shows how to use them.
+- Copy `<plugin>/templates/widgets.js` to `<topic>/widgets.js` and the folder `<plugin>/templates/katex/` to `<topic>/katex/`, unchanged. It provides sliders, option lists and checkboxes, line, bar and heat-map plots, formula animations, a static step table, and hand-calculation checks; its header shows how to use them.
 - Write only `<topic>/demos.js`: one `PR.demo(...)` per knowledge point that can be computed, and at least one `PR.check(...)` per demo that compares a setting with a hand calculation. No knowledge point gets its own page or program.
+- **Formulas first.** The page opens with 總覽: the formula map (`PR.formulaMap`, lanes for the strands of the method, one box per formula with its number and page, arrows labelled with the step between formulas, a dashed arrow for a proof, the final objective highlighted, one caption paragraph telling the whole derivation in words) and the symbol table. Then the formulas one by one, grouped in the order of the derivation, and after them the storyline; each a `section.eq-sec` with its number as `data-tag`: the formula typeset in LaTeX (`tex-block`, terms coloured with `\ca` `\cb` `\cc` `\cd` so the reader can follow each term), its page and section, every symbol explained in one line, and links to the formula it comes from, the one it leads to, and the knowledge point that computes it. The left sidebar is built from the sections' `data-toc`.
+- **Presentation.** Use the template's classes rather than new styles: a knowledge-point title carries its number as `<span class="chip">`, `chip trad` for a traditional approach; key numbers of the storyline go in `.stats` cards; reading status and check results are `.badge` (`ok`, `mid`, `low`, `bad`); wide tables sit in `.table-wrap`; a paper's name is itself the link to its note. Prose is kept to the template's reading width; plots fill their box and sit side by side when a demo returns two.
 - **Animate the math.** A knowledge point whose method is a formula is marked `data-formula="1"`, and its `compute` returns `anim`: the formula taken apart into frames, from the definition through each substitution to the result, with the numbers of the current setting filled in. Where a picture helps, a frame carries a plot that changes with it (for example a transition matrix filling in count by count). The reader can play, pause and step. The animation is recomputed from the current inputs, never pre-drawn.
 
 - `index.html`, `widgets.js` and `demos.js` are plain files (no modules, no `fetch`), so the page works when double-clicked; small data is embedded in `demos.js`.
@@ -153,11 +157,11 @@ All knowledge points live on one page and share one widget library. Start from t
 - **What "real" interaction means.** When the user changes an input or parameter, the result on screen is recomputed by code actually running the algorithm, not a switch between pre-made images or a hard-coded animation. Keep the cases where the paper's method still does poorly.
 - **Points without a computation.** A point that cannot be computed (a definition, a dataset fact) is still covered: its section shows the relevant figure from the paper or a small table, and says why there is no demo.
 - **Where the computation runs**: in the browser by default. Build a local backend only when the computation needs Python packages or models, or the data is too large to embed: list it in stage 0, ask before starting it, and stop it when done.
-- **Acceptance**: run `python <plugin>/scripts/check_page.py <topic>`. It opens the page in the Chrome, Edge or Chromium already on the machine, moves every control of every demo, confirms the output changes, steps through every formula animation, runs every `PR.check`, and prints one line per knowledge point (通過 / 未通過 / 無示範). The page also fails when no knowledge point runs a traditional approach, a map entry has no section, or unconfirmed wording appears. Fix what fails and run it again. Copy its lines into the 驗收結果 table, then fill the 報告要求對照 table. No screenshots.
+- **Acceptance**: run `python <plugin>/scripts/check_page.py <topic>`. It opens the page in the Chrome, Edge or Chromium already on the machine, moves every control of every demo, confirms the output changes, steps through every formula animation, runs every `PR.check`, and prints one line per knowledge point (通過 / 未通過 / 無示範). The page also fails when the formula layer is incomplete (no formula map, a box linking nowhere, a formula section missing from the map, an empty symbol table, a formula KaTeX could not typeset), when no knowledge point runs a traditional approach, a map entry has no section, or unconfirmed wording appears. Fix what fails and run it again. Copy its lines into the 驗收結果 table, then fill the 報告要求對照 table. No screenshots.
 
 ## Stage 5: report storyline
 
-The storyline opens `index.html` and connects the cluster, the difficulties and the knowledge points; each section links to the knowledge-point sections it relies on.
+The storyline follows the formula overview and the formulas on `index.html`, and connects the cluster, the difficulties and the knowledge points; each section links to the knowledge-point sections it relies on.
 
 Use these Chinese section titles on the page:
 
@@ -180,10 +184,11 @@ There is no section of open questions; see "What the page shows".
 `index.html` is the acceptance page. From it the user must be able to see, without opening other files:
 
 1. **Paper-cluster comparison**: one row per paper with its role, the difficulty it addresses, its core design, its evidence (with source location), what it leaves unsolved, and how much was read (已讀全文 / 已讀相關段落 / 部分閱讀 / 待讀).
-2. **Complete knowledge-point map**: every point, grouped and numbered, with its source location and a link to its section.
-3. **Interactive material**: each knowledge-point section with its demo.
-4. **Item-by-item check results**: one row per knowledge point with the controls that were operated, whether its formula animation steps, the hand calculation or reference it was checked against, the result (通過 / 未通過 / 未驗收), and any limitation. Totals alone ("279 controls passed") are not enough; each point must be traceable to its own row.
-5. **Report requirements**: the 報告要求對照 table from "Report requirements", one row per requirement with a link to where the page meets it.
+2. **Formula overview**: the formula map and the symbol table at the top, and every formula typeset with its location.
+3. **Complete knowledge-point map**: every point, grouped and numbered, with its source location and a link to its section.
+4. **Interactive material**: each knowledge-point section with its demo.
+5. **Item-by-item check results**: one row per knowledge point with the controls that were operated, whether its formula animation steps, the hand calculation or reference it was checked against, the result (通過 / 未通過 / 未驗收), and any limitation. Totals alone ("279 controls passed") are not enough; each point must be traceable to its own row.
+6. **Report requirements**: the 報告要求對照 table from "Report requirements", one row per requirement with a link to where the page meets it.
 
 ## Output location
 
@@ -193,6 +198,7 @@ Never write to an Obsidian vault unless the user explicitly asks. By default, wr
 ~/Documents/claude/paper-reading/<topic>/
   index.html            the one page: storyline, paper-cluster comparison, every knowledge point with its demo, check results
   widgets.js            the plugin's shared widgets, copied unchanged
+  katex/                formula typesetting (KaTeX, MIT), copied unchanged; works offline
   demos.js              the computation of each knowledge point's demo
   papers/<short>.md     one note per paper
   data/                 real samples and their sources; created only when the user approved a download

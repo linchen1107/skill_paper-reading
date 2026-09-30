@@ -18,13 +18,18 @@
  *   });
  * It renders into <div class="demo" id="demo-3"> and recomputes on every change.
  *
+ * Formulas: <div class="tex-block">\ca{L_{Adv}} = …</div> or <span class="tex">…</span> hold LaTeX and are
+ * typeset with katex/ (colour macros \ca \cb \cc \cd); anim frames take tex: '…' as well.
+ * Formula map (how the formulas connect; nodes jump to their section): PR.formulaMap('fmap', {...}),
+ * spec documented above the function below. The left sidebar #toc is built from sections with data-toc.
+ *
  * A hand calculation the demo must reproduce:
  *   PR.check('3', 'α = 1 時增益不變', () => ({expected: 0, actual: f(1), tol: 1e-9}));
  */
 (function () {
   'use strict';
   const PR = (window.PR = { demos: {}, checks: [], errors: [] });
-  const COLORS = ['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#0891b2'];
+  const COLORS = ['#60a5fa', '#f87171', '#4ade80', '#c084fc', '#fb923c', '#22d3ee'];
 
   function el(tag, attrs, ...kids) {
     const e = document.createElement(tag);
@@ -52,68 +57,104 @@
     return [lo, hi];
   }
 
+  // Readable tick values: steps of 1, 2 or 5 times a power of ten.
+  function niceStep(span, n) {
+    const raw = span / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+  }
+  function tickFmt(v, step) {
+    const d = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+    const a = Math.abs(v);
+    if (a !== 0 && (a >= 1e5 || a < 1e-3)) return v.toExponential(1);
+    return v.toFixed(Math.min(d, 4));
+  }
+
+  // One plot, as wide as its box. Title and y-axis name sit above the axes; the legend sits inside, top right.
   function drawPlot(box, spec) {
-    const W = 640, H = 300, L = 56, R = 16, T = 28, B = 44;
+    const cell = el('div', { class: 'plot' });
+    box.append(cell);
+    const W = Math.max(300, Math.min(cell.clientWidth || 640, 1100)), H = spec.height || 280;
+    const L = 52, R = 14, T = 50, B = 40;
     const dpr = window.devicePixelRatio || 1;
-    const cv = el('canvas', { width: W * dpr, height: H * dpr, style: `width:100%;max-width:${W}px` });
+    const cv = el('canvas', { width: Math.round(W * dpr), height: Math.round(H * dpr), style: `width:${W}px;max-width:100%;height:auto` });
     const g = cv.getContext('2d');
     g.scale(dpr, dpr);
-    g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
-    g.font = '12px system-ui, sans-serif'; g.fillStyle = '#333';
-    if (spec.title) g.fillText(spec.title, L, 16);
+    g.fillStyle = '#0f172a'; g.fillRect(0, 0, W, H);
+    g.font = '600 13px system-ui, "Microsoft JhengHei", sans-serif'; g.fillStyle = '#e2e8f0';
+    if (spec.title) g.fillText(spec.title, 12, 18);
+    g.font = '12px system-ui, "Microsoft JhengHei", sans-serif';
     const type = spec.type || 'line';
     const pw = W - L - R, ph = H - T - B;
 
     if (type === 'heatmap') {
       const z = spec.z, rows = z.length, cols = z[0].length;
       const [lo, hi] = range(z.flat());
+      const colour = t => `hsl(${220 - 190 * t},75%,${22 + 42 * t}%)`;
       for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) {
-        const t = (z[i][j] - lo) / (hi - lo);
-        g.fillStyle = `hsl(${240 - 240 * t},70%,${35 + 30 * t}%)`;
+        g.fillStyle = colour((z[i][j] - lo) / (hi - lo));
         g.fillRect(L + (j * pw) / cols, T + (i * ph) / rows, pw / cols + 0.5, ph / rows + 0.5);
       }
-      g.fillStyle = '#333';
-      g.fillText(`${PR.fmt(lo)} → ${PR.fmt(hi)}`, L, H - 8);
+      const gx = L, gy = H - 18, gw = Math.min(180, pw);
+      for (let k = 0; k < gw; k++) { g.fillStyle = colour(k / gw); g.fillRect(gx + k, gy, 1, 8); }
+      g.fillStyle = '#94a3b8';
+      g.fillText(PR.fmt(lo), gx, gy - 3); g.fillText(PR.fmt(hi), gx + gw - 30, gy - 3);
     } else {
       const series = spec.series || [];
       const xs = series.flatMap(s => s.x || s.y.map((_, i) => i));
-      const ys = series.flatMap(s => s.y);
-      const [x0, x1] = spec.xrange || range(xs);
-      const [y0, y1] = spec.yrange || range(type === 'bar' ? ys.concat([0]) : ys);
-      const X = x => L + ((x - x0) / (x1 - x0)) * pw;
+      const ys = series.flatMap(s => s.y).filter(v => isFinite(v));
+      let [y0, y1] = spec.yrange || range(type === 'bar' ? ys.concat([0]) : ys);
+      const ys_ = niceStep(y1 - y0, 4);
+      if (!spec.yrange) { y0 = Math.floor(y0 / ys_ + 1e-9) * ys_; y1 = Math.ceil(y1 / ys_ - 1e-9) * ys_; if (y0 === y1) y1 = y0 + ys_; }
       const Y = y => T + ph - ((y - y0) / (y1 - y0)) * ph;
-      g.strokeStyle = '#999'; g.lineWidth = 1;
-      g.strokeRect(L, T, pw, ph);
-      g.fillStyle = '#555';
-      for (let k = 0; k <= 4; k++) {
-        const yv = y0 + ((y1 - y0) * k) / 4, xv = x0 + ((x1 - x0) * k) / 4;
-        g.fillText(PR.fmt(yv), 4, Y(yv) + 4);
-        g.fillText(PR.fmt(xv), X(xv) - 12, T + ph + 16);
+      g.strokeStyle = '#1e293b'; g.lineWidth = 1; g.fillStyle = '#94a3b8'; g.textAlign = 'right';
+      for (let v = Math.ceil(y0 / ys_ - 1e-9) * ys_; v <= y1 + ys_ * 1e-6; v += ys_) {
+        g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(L + pw, Y(v)); g.stroke();
+        g.fillText(tickFmt(v, ys_), L - 6, Y(v) + 4);
       }
-      if (spec.xlabel) g.fillText(spec.xlabel, L + pw / 2 - 30, H - 6);
-      if (spec.ylabel) { g.save(); g.translate(12, T + ph / 2 + 30); g.rotate(-Math.PI / 2); g.fillText(spec.ylabel, 0, 0); g.restore(); }
-      series.forEach((s, k) => {
-        const x = s.x || s.y.map((_, i) => i);
-        g.strokeStyle = g.fillStyle = s.color || COLORS[k % COLORS.length];
-        if (type === 'bar') {
-          const n = series.length, bw = (pw / Math.max(x.length, 1)) * 0.8 / n;
-          x.forEach((xv, i) => {
-            const px = L + (i + 0.1) * (pw / x.length) + k * bw;
-            g.fillRect(px, Math.min(Y(s.y[i]), Y(0)), bw, Math.abs(Y(s.y[i]) - Y(0)));
-          });
-        } else {
+      g.textAlign = 'left';
+      if (spec.ylabel) { g.fillStyle = '#94a3b8'; g.fillText(spec.ylabel, 12, T - 10); }
+      g.strokeStyle = '#475569'; g.strokeRect(L, T, pw, ph);
+      if (type === 'bar') {
+        const n = Math.max(1, ...series.map(s => s.y.length)), slot = pw / n, k0 = series.length;
+        const labels = (series[0] && series[0].x) || series[0].y.map((_, i) => i + 1);
+        g.fillStyle = '#94a3b8'; g.textAlign = 'center';
+        if (n <= 16) labels.forEach((lv, i) => g.fillText(String(PR.fmt(lv)), L + (i + 0.5) * slot, T + ph + 16));
+        g.textAlign = 'left';
+        series.forEach((s, k) => {
+          g.fillStyle = s.color || COLORS[k % COLORS.length];
+          const bw = (slot * 0.76) / k0;
+          s.y.forEach((v, i) => { const px = L + i * slot + slot * 0.12 + k * bw; g.fillRect(px, Math.min(Y(v), Y(Math.max(0, y0))), bw, Math.abs(Y(v) - Y(Math.max(0, y0)))); });
+        });
+      } else {
+        let [x0, x1] = spec.xrange || range(xs);
+        const xs_ = niceStep(x1 - x0, 5);
+        const X = x => L + ((x - x0) / (x1 - x0)) * pw;
+        g.fillStyle = '#94a3b8'; g.textAlign = 'center';
+        for (let v = Math.ceil(x0 / xs_ - 1e-9) * xs_; v <= x1 + xs_ * 1e-6; v += xs_) g.fillText(tickFmt(v, xs_), X(v), T + ph + 16);
+        g.textAlign = 'left';
+        series.forEach((s, k) => {
+          const x = s.x || s.y.map((_, i) => i);
+          g.strokeStyle = s.color || COLORS[k % COLORS.length];
           g.lineWidth = 2; g.setLineDash(s.dashed ? [5, 4] : []); g.beginPath();
           x.forEach((xv, i) => (i ? g.lineTo(X(xv), Y(s.y[i])) : g.moveTo(X(xv), Y(s.y[i]))));
           g.stroke(); g.setLineDash([]);
-        }
-      });
+        });
+      }
+      if (spec.xlabel) { g.fillStyle = '#94a3b8'; g.textAlign = 'center'; g.fillText(spec.xlabel, L + pw / 2, H - 6); g.textAlign = 'left'; }
+      if (series.length > 1) {
+        let lx = L + pw; const ly = T - 28;
+        const items = series.map((s, k) => [s.name, s.color || COLORS[k % COLORS.length], s.dashed]).reverse();
+        const widths = items.map(it => g.measureText(it[0]).width + 26);
+        const total = widths.reduce((a, b) => a + b, 0);
+        items.forEach((it, i) => {
+          lx -= widths[i];
+          g.strokeStyle = it[1]; g.lineWidth = 2.5; g.setLineDash(it[2] ? [4, 3] : []);
+          g.beginPath(); g.moveTo(lx, ly + 8); g.lineTo(lx + 16, ly + 8); g.stroke(); g.setLineDash([]);
+          g.fillStyle = '#e2e8f0'; g.fillText(it[0], lx + 20, ly + 12);
+        });
+      }
     }
-    box.append(cv);
-    if (spec.series && spec.series.length > 1) {
-      const lg = el('div', { class: 'legend' });
-      spec.series.forEach((s, k) => lg.append(el('span', { style: `color:${s.color || COLORS[k % COLORS.length]}`, text: '■ ' + s.name })));
-      box.append(lg);
-    }
+    cell.append(cv);
   }
 
   function tableOf(rows, cls) {
@@ -126,25 +167,220 @@
     return t;
   }
 
-  // Formula animation: frames appear one at a time, the current one highlighted,
-  // with the numbers of this run filled in; a frame may carry a plot that is redrawn.
-  // The animation carries its own styles, so it looks right on any page, old or new.
-  const ANIM_CSS = `.anim{border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;margin:8px 0;background:#f8fafc}
-.anim-title{font-weight:700;margin-bottom:6px}
+  // ---------- Formulas typeset with KaTeX (katex/ next to the page; falls back to the source text) ----------
+  // Colour macros for the terms of a formula: \ca{..} cyan, \cb{..} amber, \cc{..} violet, \cd{..} green.
+  // Defined inside the source with \def (plain TeX). Hex colours are written without '#', which TeX would read
+  // as a macro argument (#6…); KaTeX adds the '#' back in the CSS it emits.
+  const TEX_DEFS = '\\def\\ca#1{\\textcolor{67e8f9}{#1}}\\def\\cb#1{\\textcolor{fbbf24}{#1}}\\def\\cc#1{\\textcolor{c4b5fd}{#1}}\\def\\cd#1{\\textcolor{86efac}{#1}}';
+  PR.tex = function (src, display) {
+    if (window.katex) {
+      try { return window.katex.renderToString(TEX_DEFS + src, { displayMode: !!display, throwOnError: false, strict: false }); }
+      catch (e) { PR.errors.push('tex: ' + e.message); }
+    }
+    const span = el('code', { class: 'tex-fallback', text: src });
+    return span.outerHTML;
+  };
+  // <span class="tex">…</span> inline, <div class="tex-block">…</div> display; the text is LaTeX source.
+  function renderTexIn(root) {
+    root.querySelectorAll('.tex, .tex-block').forEach(n => {
+      if (n.dataset.done) return;
+      const src = n.textContent;
+      n.dataset.src = src;
+      n.innerHTML = PR.tex(src, n.classList.contains('tex-block'));
+      n.dataset.done = '1';
+    });
+  }
+  PR.renderTex = renderTexIn;
+
+  // ---------- Styles carried by the widgets, so they look right on any page ----------
+  const WIDGET_CSS = `.anim{border:1px solid #334155;border-radius:8px;padding:10px 12px;margin:8px 0;background:#0b1220}
+.anim-title{font-weight:700;margin-bottom:6px;color:#e2e8f0}
 .anim-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px}
-.anim-bar button{font:inherit;padding:2px 10px;border:1px solid #cbd5e1;border-radius:4px;background:#fff;cursor:pointer}
-.anim-pos{color:#6b7280;margin-left:6px}
+.anim-bar button{font:inherit;padding:2px 10px;border:1px solid #475569;border-radius:4px;background:#1e293b;color:#e2e8f0;cursor:pointer}
+.anim-bar button:hover{border-color:#67e8f9}
+.anim-pos{color:#94a3b8;margin-left:6px}
 .anim-frames{margin:8px 0 4px;padding-left:1.6em}
-.anim-frames li{padding:2px 6px;border-radius:4px;color:#6b7280}
-.anim-frames li.cur{background:#dbeafe;color:#1f2937}
-.anim-label{margin-right:8px}
+.anim-frames li{padding:3px 8px;border-radius:4px;color:#94a3b8}
+.anim-frames li.cur{background:#164e63;color:#f1f5f9}
+.anim-label{margin-right:10px}
 .anim-expr{font-family:"Cambria Math","Times New Roman",serif;font-size:16px;margin-right:6px}
-.anim-val{font-weight:700}`;
-  function ensureAnimCss() {
-    if (document.getElementById('pr-anim-css')) return;
-    const st = el('style', { id: 'pr-anim-css' }); st.textContent = ANIM_CSS; document.head.append(st);
+.anim-tex{margin-right:8px}
+.anim-val{font-weight:700;color:#fbbf24}
+#toc .toc-head{display:flex;align-items:center;margin-top:10px}
+#toc .toc-caret{background:none;border:0;color:#64748b;cursor:pointer;width:18px;padding:0;font-size:12px;transition:transform .15s}
+#toc .toc-grp.open .toc-caret{transform:rotate(90deg)}
+#toc .toc-head a{flex:1;color:#e2e8f0;font-weight:700}
+#toc .toc-sub{display:none;margin:2px 0 4px 10px;border-left:1px solid #1e293b}
+#toc .toc-grp.open .toc-sub{display:block}
+#pr-progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,#22d3ee,#fbbf24);z-index:50}
+#pr-top{position:fixed;right:22px;bottom:22px;width:40px;height:40px;border-radius:50%;border:1px solid #334155;background:#111820;color:#67e8f9;font-size:18px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+#pr-top.show{opacity:1;pointer-events:auto}
+#pr-top:hover{border-color:#67e8f9}
+.plots{display:grid;gap:12px;margin:10px 0}
+.plots.two{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+.plot canvas{display:block;border-radius:6px;border:1px solid #1e293b}
+.controls input[type=range]{accent-color:#67e8f9;width:150px}
+.controls select{background:#1e293b;color:#e2e8f0;border:1px solid #475569;border-radius:5px;padding:2px 6px;font:inherit}
+.controls input[type=checkbox]{accent-color:#67e8f9;width:16px;height:16px}
+.controls .val{display:inline-block;min-width:3.2em;padding:0 6px;border-radius:4px;background:#1e293b;color:#67e8f9;font:12px/1.8 ui-monospace,Consolas,monospace;text-align:center}
+.fmap{position:relative;overflow-x:auto;border:1px solid #334155;border-radius:10px;background:#0b1220;padding:8px}
+.fmap svg{display:block}
+.fmap .node{cursor:pointer}
+.fmap .node:hover rect{stroke:#67e8f9}
+.fmap .nbox{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;font-size:15px;line-height:1.35;color:#e2e8f0;padding:4px}
+.fmap .nbox .ntag{font-size:13px;color:#94a3b8;font-family:ui-monospace,Consolas,monospace}
+.fmap .nbox b{font-weight:700}
+.fmap .elabel{font-size:13px;line-height:1.3;color:#cbd5e1;text-align:center;height:100%;display:flex;align-items:flex-end;justify-content:center}
+.fmap .lane{font-size:13px;fill:#94a3b8;font-family:ui-monospace,Consolas,monospace}`;
+  function ensureCss() {
+    if (document.getElementById('pr-widget-css')) return;
+    const st = el('style', { id: 'pr-widget-css' }); st.textContent = WIDGET_CSS; document.head.append(st);
+  }
+  const ensureAnimCss = ensureCss;
+
+  // ---------- Formula map: how the formulas connect ----------
+  // PR.formulaMap('fmap', {
+  //   lanes: [{id: 'a', label: 'InfoGAN 項'}, ...],                   // rows, top to bottom
+  //   nodes: [{id: 'e1', lane: 'a', col: 0, tag: '(1) · p.3', title: 'GAN 對抗損失', href: '#eq-1',
+  //            kind: 'base' | 'new' | 'target' | 'algo' | 'chip', span: 2}],   // span: rows a target covers
+  //   edges: [{from: 'e1', to: 'e2', label: '加互資訊', dashed: false, route: 'side' | 'over' | 'under' | 'up' | 'arc'}],
+  //   (side: right edge to left edge; over/under: around the lane above/below; up: straight up to the box above;
+  //    arc: curved, the default for a dashed proof arrow)
+  //   caption: '…'                                                   // one paragraph: the derivation in words
+  // });
+  const KIND = { base: ['#0f172a', '#cbd5e1'], new: ['#083344', '#22d3ee'], target: ['#3b2f1a', '#fbbf24'], algo: ['#2a2410', '#facc15'], chip: ['#1e293b', '#475569'], aux: ['#111827', '#64748b'] };
+  PR.formulaMap = function (id, spec) {
+    function draw() {
+      ensureCss();
+      const root = document.getElementById(id);
+      if (!root) { PR.errors.push(`formulaMap ${id}: no element`); return; }
+      root.classList.add('fmap'); root.innerHTML = '';
+      const CW = 236, NW = 148, NH = 64, LH = 124, LX = 96, TOP = 44;
+      const lanes = spec.lanes || [], li = {}; lanes.forEach((l, i) => (li[l.id] = i));
+      const cols = Math.max(...spec.nodes.map(n => n.col + 1));
+      const W = LX + cols * CW + 20, H = TOP + lanes.length * LH + 10;
+      const pos = {};
+      spec.nodes.forEach(n => {
+        const span = n.span || 1, h = n.kind === 'chip' ? 34 : NH + (span - 1) * LH;
+        const x = LX + n.col * CW + (CW - NW) / 2, y = TOP + li[n.lane] * LH + (LH - NH) / 2 + (n.kind === 'chip' ? (NH - 34) / 2 : 0);
+        pos[n.id] = { x, y, w: NW, h, n };
+      });
+      const NS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.style.width = '100%'; svg.style.maxWidth = W + 'px'; svg.style.height = 'auto';
+      const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+      const defs = mk('defs', {}); const mkArrow = (idn, c) => { const m = mk('marker', { id: idn, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }); m.append(mk('path', { d: 'M0,0 L10,5 L0,10 z', fill: c })); defs.append(m); };
+      mkArrow(id + '-ar', '#cbd5e1'); mkArrow(id + '-ar2', '#fbbf24'); svg.append(defs);
+      lanes.forEach((l, i) => {
+        const y = TOP + i * LH;
+        if (i > 0) svg.append(mk('line', { x1: 8, x2: W - 8, y1: y, y2: y, stroke: '#334155', 'stroke-dasharray': '5 5' }));
+        const t = mk('text', { x: 10, y: y + LH / 2 + 4, class: 'lane' }); t.textContent = l.label; svg.append(t);
+      });
+      const fo = (x, y, w, h, html, cls) => { const f = mk('foreignObject', { x, y, width: w, height: h }); const d = document.createElement('div'); d.className = cls; d.innerHTML = html; f.append(d); return f; };
+      (spec.edges || []).forEach(e => {
+        const a = pos[e.from], b = pos[e.to];
+        if (!a || !b) { PR.errors.push(`formulaMap edge ${e.from}->${e.to}: unknown node`); return; }
+        let d, lx, ly, lw = 150;
+        const route = e.route || (e.dashed ? 'arc' : 'side');
+        if (route === 'over') { const yy = b.y + b.h < a.y ? (b.y + b.h + a.y) / 2 : Math.min(a.y, b.y) - 22; d = `M${a.x + a.w / 2},${a.y} V${yy} H${b.x + b.w / 2} V${yy > b.y + b.h ? b.y + b.h : b.y}`; lx = (a.x + b.x + b.w) / 2; ly = yy - 4; }
+        else if (route === 'under') { const yy = b.y > a.y + a.h ? (a.y + a.h + b.y) / 2 : Math.max(a.y + a.h, b.y + b.h) + 16; d = `M${a.x + a.w / 2},${a.y + a.h} V${yy} H${b.x + b.w / 2} V${yy < b.y ? b.y : b.y + b.h}`; lx = (a.x + b.x + b.w) / 2; ly = yy - 4; }
+        else if (route === 'up') { const x = a.x + a.w / 2; d = `M${x},${a.y} V${b.y + b.h}`; lx = x - 80; ly = (a.y + b.y + b.h) / 2 + 12; lw = 150; }
+        else if (route === 'arc') { const x1 = a.x + a.w / 2, x2 = b.x + b.w / 2, y0 = Math.min(a.y, b.y), yy = y0 - 34; d = `M${x1},${a.y} Q${(x1 + x2) / 2},${yy} ${x2},${b.y}`; lx = (x1 + x2) / 2; ly = yy + 8; }
+        else { const sx = a.x + a.w, sy = a.y + a.h / 2, ex = b.x, ey = b.y + b.h / 2, mx = (sx + ex) / 2; d = sy === ey ? `M${sx},${sy} H${ex}` : `M${sx},${sy} H${mx} V${ey} H${ex}`; lx = mx; ly = Math.min(sy, ey) - 4; lw = Math.max(64, ex - sx - 8); }
+        const col = e.dashed ? '#fbbf24' : '#cbd5e1';
+        svg.append(mk('path', { d, fill: 'none', stroke: col, 'stroke-width': 1.6, 'stroke-dasharray': e.dashed ? '6 5' : '', 'marker-end': `url(#${id}-${e.dashed ? 'ar2' : 'ar'})` }));
+        if (e.label || e.tex) {
+          const html = (e.label ? e.label : '') + (e.tex ? PR.tex(e.tex) : '');
+          svg.append(fo(lx - lw / 2, ly - 36, lw, 36, `<span style="background:#0b1220;padding:0 3px;${e.dashed ? 'color:#fbbf24' : ''}">${html}</span>`, 'elabel'));
+        }
+      });
+      Object.values(pos).forEach(p => {
+        const [bg, stroke] = KIND[p.n.kind || 'base'];
+        const g = mk('g', { class: 'node', 'data-href': p.n.href || '', tabindex: 0 });
+        g.append(mk('rect', { x: p.x, y: p.y, width: p.w, height: p.h, rx: p.n.kind === 'chip' ? 17 : 8, fill: bg, stroke, 'stroke-width': p.n.kind === 'target' || p.n.kind === 'new' ? 2 : 1.3 }));
+        const title = p.n.tex ? PR.tex(p.n.tex) : (p.n.title || '');
+        const tag = p.n.tag ? `<span class="ntag" style="${p.n.kind === 'target' || p.n.kind === 'algo' ? 'color:#fbbf24' : ''}">${p.n.tag}</span>` : '';
+        g.append(fo(p.x, p.y, p.w, p.h, `${tag}<b>${title}</b>${p.n.tex && p.n.title ? `<span>${p.n.title}</span>` : ''}`, 'nbox'));
+        const go = () => { if (p.n.href) { const t = document.querySelector(p.n.href); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); history.replaceState(null, '', p.n.href); } };
+        g.addEventListener('click', go); g.addEventListener('keydown', ev => { if (ev.key === 'Enter') go(); });
+        svg.append(g);
+      });
+      root.append(svg);
+      if (spec.caption) { const cap = el('p', { class: 'fmap-caption' }); cap.innerHTML = spec.caption; root.after(cap); renderTexIn(cap); }
+    }
+    PR.maps = PR.maps || {}; PR.maps[id] = spec;
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', draw); else draw();
+  };
+
+  // ---------- Left sidebar: built from the page's sections ----------
+  // A section with id and data-toc-group starts a group; inside it, sections with id and data-tag become items.
+  function buildToc() {
+    const side = document.getElementById('toc');
+    if (!side) return;
+    side.innerHTML = '';
+    const list = el('div', { class: 'toc-list' });
+    let sub = null;
+    document.querySelectorAll('main section[id][data-toc]').forEach(s => {
+      const lvl = s.dataset.toc;
+      const h = s.querySelector('h2, h3');
+      let name = s.dataset.tocName;
+      if (!name && h) { const c = h.cloneNode(true); c.querySelectorAll('.chip, .mark').forEach(x => x.remove()); name = c.textContent.replace(/^\s*\d+\.\s*/, '').trim(); }
+      name = name || s.id;
+      const a = el('a', { href: '#' + s.id, class: 'toc-' + lvl });
+      if (s.dataset.tag) a.append(el('span', { class: 'toc-tag', text: s.dataset.tag }));
+      a.append(el('span', { class: 'toc-name', text: name }));
+      if (lvl === 'group') {
+        const grp = el('div', { class: 'toc-grp' });
+        const caret = el('button', { type: 'button', class: 'toc-caret', 'aria-label': '展開或收合' , text: '▸' });
+        const head = el('div', { class: 'toc-head' }, caret, a);
+        sub = el('div', { class: 'toc-sub' });
+        caret.addEventListener('click', () => grp.classList.toggle('open'));
+        grp.append(head, sub); list.append(grp);
+      } else (sub || list).append(a);
+    });
+    list.querySelectorAll('.toc-grp').forEach(g => { if (!g.querySelector('.toc-sub a')) g.querySelector('.toc-caret').style.visibility = 'hidden'; });
+    side.append(list);
+    const links = [...side.querySelectorAll('a')];
+    const spy = () => {
+      let cur = null;
+      links.forEach(a => { const t = document.querySelector(a.getAttribute('href')); if (t && t.getBoundingClientRect().top < 120) cur = a; });
+      links.forEach(a => a.classList.toggle('on', a === cur));
+      const g = cur && cur.closest('.toc-grp');
+      if (g && !g.classList.contains('open')) { side.querySelectorAll('.toc-grp.auto').forEach(x => x !== g && x.classList.remove('open', 'auto')); g.classList.add('open', 'auto'); }
+      if (cur) { const r = cur.getBoundingClientRect(), sr = side.getBoundingClientRect(); if (r.top < sr.top + 40 || r.bottom > sr.bottom - 40) side.scrollTop += r.top - sr.top - sr.height / 3; }
+    };
+    let ticking = false;
+    window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { spy(); ticking = false; }); } }, { passive: true });
+    spy();
   }
 
+  // Reading progress bar at the top and a back-to-top button.
+  function pageChrome() {
+    if (document.getElementById('pr-progress')) return;
+    const bar = el('div', { id: 'pr-progress' });
+    const top = el('button', { id: 'pr-top', type: 'button', 'aria-label': '回到頂端', text: '↑' });
+    top.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    document.body.append(bar, top);
+    const upd = () => {
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (100 * window.scrollY) / h : 0) + '%';
+      top.classList.toggle('show', window.scrollY > 600);
+    };
+    window.addEventListener('scroll', upd, { passive: true }); upd();
+  }
+
+  function boot() {
+    ensureCss(); renderTexIn(document); buildToc(); pageChrome();
+    let t = null, w0 = window.innerWidth;
+    window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => {
+      if (Math.abs(window.innerWidth - w0) < 40) return; w0 = window.innerWidth;
+      Object.values(PR.demos).forEach(d => d.redraw && d.redraw());
+    }, 250); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+
+  // Formula animation: frames appear one at a time, the current one highlighted,
+  // with the numbers of this run filled in; a frame may carry LaTeX (tex) and a plot that is redrawn.
   function renderAnim(box, anim, d) {
     ensureAnimCss();
     const wrap = el('div', { class: 'anim' });
@@ -168,7 +404,8 @@
         if (k > i) return;
         const li = el('li', { class: k === i ? 'cur' : '' });
         li.append(el('span', { class: 'anim-label', text: f.label || '' }));
-        if (f.expr) li.append(el('code', { class: 'anim-expr', text: f.expr }));
+        if (f.tex) { const t = el('span', { class: 'anim-tex' }); t.innerHTML = PR.tex(f.tex); li.append(t); }
+        else if (f.expr) li.append(el('code', { class: 'anim-expr', text: f.expr }));
         if (f.value !== undefined) li.append(el('span', { class: 'anim-val', text: '= ' + PR.fmt(f.value) }));
         list.append(li);
       });
@@ -232,7 +469,11 @@
       try {
         const r = spec.compute({ ...params }) || {};
         if (r.anim) renderAnim(d.out, r.anim, d);
-        (r.plots || []).forEach(p => drawPlot(d.out, p));
+        if (r.plots && r.plots.length) {
+          const grid = el('div', { class: 'plots' + (r.plots.length > 1 ? ' two' : '') });
+          d.out.append(grid);
+          r.plots.forEach(p => drawPlot(grid, p));
+        }
         if (r.steps) d.out.append(tableOf([['步驟', '代入數值', '結果']].concat(r.steps), 'steps'));
         if (r.table) d.out.append(tableOf(r.table));
         if (r.note) d.out.append(el('p', { class: 'note', text: r.note }));
@@ -242,7 +483,7 @@
       }
     }
 
-    d.render = render;
+    d.render = render; d.redraw = () => d.out && draw();
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
     else render();
   };

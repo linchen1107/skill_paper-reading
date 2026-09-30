@@ -197,6 +197,7 @@ def main() -> None:
         dest = reading / "templates"
         dest.mkdir(exist_ok=True)
         shutil.copy2(ROOT / "templates" / template, dest / template)
+    shutil.copytree(ROOT / "templates" / "katex", reading / "templates" / "katex", dirs_exist_ok=True)
     sources = reading / "references"
     sources.mkdir(exist_ok=True)
     shutil.copy2(ROOT / "skills" / "reading" / "references" / "sources.md",

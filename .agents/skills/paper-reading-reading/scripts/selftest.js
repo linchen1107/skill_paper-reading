@@ -60,6 +60,18 @@
       }
       out.sections.push(r);
     });
+    // formulas: the map links every formula section, every link lands, symbols are listed, KaTeX typeset them
+    const eqIds = [...document.querySelectorAll('section.eq-sec[id]')].map(s => s.id);
+    const nodeHrefs = [...document.querySelectorAll('.fmap .node')].map(n => n.getAttribute('data-href') || '');
+    out.formulas = {
+      sections: eqIds.length,
+      mapNodes: nodeHrefs.length,
+      brokenLinks: nodeHrefs.filter(h => h && !document.querySelector(h)).concat(nodeHrefs.filter(h => !h).map(() => '(no href)')),
+      notOnMap: eqIds.filter(id => !nodeHrefs.includes('#' + id)),
+      symbols: document.querySelectorAll('#symbol-table tr').length - 1,
+      texErrors: document.querySelectorAll('.katex-error').length,
+      texFallback: document.querySelectorAll('.tex-fallback').length
+    };
     // the page shows confirmed content only; unconfirmed items belong in the paper notes
     const text = (document.querySelector('main') || document.body).innerText;
     out.unconfirmed = [];

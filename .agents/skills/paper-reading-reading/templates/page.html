@@ -3,76 +3,151 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><!-- 論文短名 -->：論文群閱讀</title>
+<title><!-- 論文短名 -->公式圖解</title>
+<link rel="stylesheet" href="katex/katex.min.css">
 <style>
-  :root { --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb; --bg: #fafaf9; --card: #fff; --accent: #2563eb; }
+  :root { --bg: #0f1419; --panel: #151c24; --card: #111820; --ink: #e2e8f0; --muted: #94a3b8; --line: #2b3643;
+          --accent: #67e8f9; --gold: #fbbf24; --serif: "Noto Serif TC", "Source Han Serif TC", "Songti TC", "PMingLiU", serif; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.75;
-         font: 16px/1.75 "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif; }
-  nav { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid var(--line);
-        padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
-  nav a { color: var(--accent); text-decoration: none; }
-  main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 80px; }
-  h1 { font-size: 26px; margin: 8px 0 4px; }
-  h2 { font-size: 21px; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--ink); }
-  h3 { font-size: 18px; margin: 0 0 6px; }
-  section[id] { scroll-margin-top: 56px; }
-  .meta, .src { color: var(--muted); font-size: 14px; }
-  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 14px; background: var(--card); }
-  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
-  th { background: #f3f4f6; }
-  .kp { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; margin: 16px 0; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.8 "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif; }
+  a { color: var(--accent); }
+  .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); }
+  #toc { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 22px 12px 40px 16px;
+         border-right: 1px solid var(--line); background: #0c1116; font-size: 13px; }
+  #toc a { display: flex; gap: 8px; padding: 3px 8px; border-radius: 4px; color: var(--muted); text-decoration: none; line-height: 1.5; }
+  #toc a:hover { color: var(--ink); }
+  #toc a.on { background: #1b2a33; color: var(--ink); }
+  #toc .toc-tag { flex: 0 0 4.2em; white-space: nowrap; color: #64748b; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+  #toc .toc-item { padding-left: 14px; }
+  main { max-width: 1200px; padding: 28px 36px 100px; }
+  h1, h2, h3 { font-family: var(--serif); letter-spacing: .02em; }
+  h1 { font-size: 30px; margin: 4px 0 6px; }
+  h2 { font-size: 26px; margin: 56px 0 6px; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
+  h2 .mark { color: var(--accent); margin-right: 10px; font-family: sans-serif; }
+  h3 { font-size: 20px; margin: 30px 0 8px; display: flex; align-items: center; gap: 10px; }
+  .chip { display: inline-block; border: 1px solid var(--accent); color: var(--accent); border-radius: 4px;
+          padding: 0 7px; font: 13px/1.7 ui-monospace, Consolas, monospace; }
+  .sub, .meta, .src { color: var(--muted); font-size: 14px; }
+  section[id] { scroll-margin-top: 16px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 14px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .eq { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px 12px; margin: 12px 0; }
+  .eq .tex-block { overflow-x: auto; font-size: 1.12em; }
+  .eq .where { text-align: right; color: var(--muted); font: 13px ui-monospace, Consolas, monospace; margin-top: 4px; }
+  .eq dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 12px 0 4px; font-size: 15px; }
+  .eq dt { color: var(--ink); } .eq dd { margin: 0; color: #cbd5e1; }
+  .eq .links { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .fmap-caption { color: #cbd5e1; font-size: 15px; max-width: 50em; }
+  .kp { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 22px; margin: 18px 0; }
   .kp dl { display: grid; grid-template-columns: 7em 1fr; gap: 4px 12px; margin: 10px 0; }
-  .kp dt { font-weight: 700; }
-  .kp dd { margin: 0; }
-  .demo { border: 1px dashed #93c5fd; border-radius: 8px; padding: 12px; margin-top: 12px; }
+  .kp dt { font-weight: 700; } .kp dd { margin: 0; color: #cbd5e1; }
+  .demo { border: 1px dashed #335; border-radius: 8px; padding: 12px; margin-top: 12px; }
   .controls { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 8px; font-size: 14px; }
   .controls label { display: flex; align-items: center; gap: 6px; }
+  .controls select { background: #1e293b; color: var(--ink); border: 1px solid #475569; border-radius: 4px; }
   .val { min-width: 4em; color: var(--muted); }
   .legend { display: flex; gap: 14px; font-size: 13px; margin: 2px 0 10px; }
   .note { color: var(--muted); font-size: 13px; }
-  .error { color: #b91c1c; }
-  .figure img { max-width: 100%; border: 1px solid var(--line); }
-  .summary p { margin: 6px 0; }  @media (max-width: 640px) { .kp dl { grid-template-columns: 1fr; } }
+  .error { color: #f87171; }
+  .figure img { max-width: 100%; border: 1px solid var(--line); background: #fff; }
+  .summary p { margin: 6px 0; }
+  /* reading width: about 45 Chinese characters per line */
+  main > section > p, main > section > ul, main > section > ol, .kp dl, .sub { max-width: 50em; }
+  main li { margin: 3px 0; }
+  .chip.trad { border-color: var(--gold); color: var(--gold); }
+  .kp h3 { margin-top: 0; }
+  /* key numbers as cards */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 12px 0; max-width: 50em; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+  .stat b { display: block; font: 700 24px/1.3 ui-monospace, Consolas, monospace; color: var(--accent); }
+  .stat b.gold { color: var(--gold); } .stat b.low { color: #f87171; }
+  .stat span { color: var(--muted); font-size: 13px; line-height: 1.5; display: block; }
+  /* badges for reading status and check results */
+  .badge { display: inline-block; white-space: nowrap; border-radius: 999px; padding: 0 9px; font-size: 12px; line-height: 1.9; border: 1px solid; }
+  .badge.ok { color: #4ade80; border-color: #166534; background: #052e16; }
+  .badge.mid { color: #67e8f9; border-color: #155e75; background: #082f3a; }
+  .badge.low { color: #fbbf24; border-color: #854d0e; background: #2a1d05; }
+  .badge.bad { color: #f87171; border-color: #7f1d1d; background: #2a0b0b; }
+  /* wide tables scroll sideways with the first column fixed */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+  .table-wrap table { margin: 0; min-width: 900px; }
+  .table-wrap th:first-child, .table-wrap td:first-child { position: sticky; left: 0; background: #111820; z-index: 1; }
+  .table-wrap th { position: sticky; top: 0; background: #131b24; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } #toc { position: static; height: auto; border-right: 0; }
+                              main { padding: 20px 16px 80px; } .kp dl, .eq dl { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
-<nav>
-  <a href="#summary">重點整理</a><a href="#s1">1 困難</a><a href="#s2">2 傳統作法</a><a href="#s3">3 論文群</a>
-  <a href="#s4">4 方法</a><a href="#s5">5 證據</a><a href="#s6">6 已解決與未解決</a>
-  <a href="#cluster">論文群比較</a><a href="#map">知識點地圖</a><a href="#kps">知識點</a><a href="#checks">驗收結果</a>
-</nav>
+<div class="layout">
+<nav id="toc" aria-label="目錄"></nav>
 <main>
 <header>
   <h1><!-- 使用者論文的標題 --></h1>
   <p class="meta"><!-- 作者 年份，出處；閱讀紀錄連到 papers/<short>.md --></p>
 </header>
 
-<section id="summary" class="summary"><h2>重點整理</h2>
+<!-- 左側目錄由 widgets.js 依 data-toc 自動產生：data-toc="group" 是分組標題，data-toc="item" 是項目，data-tag 是式號或附錄編號 -->
+
+<section id="overview" data-toc="group" data-toc-name="總覽"><h2><span class="mark">○</span>總覽</h2>
+  <p class="sub">先看公式彼此怎麼接起來，再逐條細讀。</p>
+  <section id="map-formulas" data-toc="item" data-tag="地圖" data-toc-name="公式之間的關係">
+    <h3><span class="chip">地圖</span>公式之間的關係</h3>
+    <p class="sub">點方塊可跳到該式。</p>
+    <div id="fmap"></div>
+    <!-- PR.formulaMap('fmap', {...}) 寫在 demos.js；caption 用一段話講完整條推導 -->
+  </section>
+  <section id="symbols" data-toc="item" data-tag="符號" data-toc-name="符號速查">
+    <h3><span class="chip">符號</span>符號速查</h3>
+    <table id="symbol-table"><tr><th>符號</th><th>意思</th><th>論文中的設定</th></tr>
+    <!-- 一個符號一列：<td><span class="tex">c \in \mathbb{R}^k</span></td><td>…</td><td>…（出處）</td> --></table>
+  </section>
+</section>
+
+<!-- 公式逐條：依推導順序分組，每組一個 h2；每個式子一個 section.eq：
+<section id="grp-1" data-toc="group" data-toc-name="一、訓練目標"><h2><span class="mark">→</span>訓練目標：從 A 到 B</h2>
+  <p class="sub">正文 §2–§3，附錄 A–D。</p>
+  <section class="eq-sec" id="eq-1" data-toc="item" data-tag="(1)">
+    <h3><span class="chip">(1)</span>名稱</h3>
+    <div class="eq">
+      <div class="tex-block">\min_G \max_D \ca{\mathcal{L}_{Adv}}(D,G) = …</div>
+      <div class="where">p.3 · §2 章節名</div>
+      <dl><dt><span class="tex">D(x)\in(0,1)</span></dt><dd>判別器認為 x 是真實影像的機率。</dd></dl>
+      <div class="links">由 <a href="#eq-…">(…)</a> 推來；推向 <a href="#eq-…">(…)</a>；互動計算：<a href="#kp-…">知識點 …</a></div>
+    </div>
+  </section>
+</section> -->
+
+<section id="summary" class="summary" data-toc="group" data-toc-name="重點整理"><h2>重點整理</h2>
   <!-- 3 句：核心問題；證據支持的改善；仍未解決的問題 -->
 </section>
 
-<section id="s1"><h2>1. 生活中的例子與困難</h2><!-- --></section>
-<section id="s2"><h2>2. 傳統作法與它的限制</h2><!-- --></section>
-<section id="s3"><h2>3. 論文群與研究缺口</h2><!-- --></section>
-<section id="s4"><h2>4. 核心想法與方法</h2><!-- --></section>
-<section id="s5"><h2>5. 證據與改善幅度</h2><!-- --></section>
-<section id="s6"><h2>6. 已解決與未解決</h2><!-- --></section>
+<!-- 故事線中的關鍵數字用 <div class="stats"><div class="stat"><b>0.84</b><span>說明（出處）</span></div>…</div>；論文名稱本身就是連到筆記的連結 -->
+<section id="s1" data-toc="item" data-tag="1"><h2>1. 生活中的例子與困難</h2><!-- --></section>
+<section id="s2" data-toc="item" data-tag="2"><h2>2. 傳統作法與它的限制</h2><!-- --></section>
+<section id="s3" data-toc="item" data-tag="3"><h2>3. 論文群與研究缺口</h2><!-- --></section>
+<section id="s4" data-toc="item" data-tag="4"><h2>4. 核心想法與方法</h2><!-- --></section>
+<section id="s5" data-toc="item" data-tag="5"><h2>5. 證據與改善幅度</h2><!-- --></section>
+<section id="s6" data-toc="item" data-tag="6"><h2>6. 已解決與未解決</h2><!-- --></section>
 
-<section id="cluster"><h2>論文群比較</h2>
-  <table><tr><th>論文</th><th>角色</th><th>解決的困難</th><th>核心設計</th><th>證據（出處）</th><th>留下的問題</th><th>閱讀狀態</th></tr>
-  <!-- 一篇一列；論文寫作者與年份，連到 papers/<short>.md --></table>
+
+
+<section id="cluster" data-toc="group" data-toc-name="論文群比較"><h2>論文群比較</h2>
+  <div class="table-wrap"><table><tr><th>論文</th><th>角色</th><th>解決的困難</th><th>核心設計</th><th>證據（出處）</th><th>留下的問題</th><th>閱讀狀態</th></tr>
+  <!-- 一篇一列；論文寫作者與年份，連到 papers/<short>.md；閱讀狀態用 <span class="badge ok">已讀全文</span>、badge mid 已讀相關段落、badge low 部分閱讀或待讀 --></table></div>
 </section>
 
-<section id="map"><h2>知識點地圖</h2>
+<section id="map" data-toc="group" data-toc-name="知識點地圖"><h2>知識點地圖</h2>
   <!-- 依組別列出每個知識點：編號、名稱、原論文位置，連到 #kp-<N> -->
 </section>
 
-<section id="kps"><h2>知識點</h2>
+<section id="kps" data-toc="group" data-toc-name="知識點與互動"><h2>知識點與互動</h2>
   <!-- 每個知識點一個區塊。有公式的知識點加 data-formula="1"，它的示範必須回傳 anim（公式動畫）；
        示範傳統作法的知識點加 data-traditional="1"，放在論文方法之前：
-  <section class="kp" id="kp-1" data-kp="1" data-formula="1">
-    <h3>知識點 1　名稱</h3>
+  <section class="kp" id="kp-1" data-kp="1" data-formula="1" data-toc="item" data-tag="1">
+    <h3><span class="chip">1</span>名稱</h3>   傳統作法用 <span class="chip trad">T1</span>
     <p class="src">原論文位置：Section …；相關論文：作者 年份</p>
     <dl><dt>生活例子</dt><dd>…</dd><dt>困難</dt><dd>…</dd><dt>傳統作法</dt><dd>…</dd>
         <dt>論文的方法</dt><dd>…</dd><dt>延伸</dt><dd>…</dd></dl>
@@ -80,14 +155,16 @@
   </section> -->
 </section>
 
-<section id="checks"><h2>驗收結果</h2>
+<section id="checks" data-toc="group" data-toc-name="驗收結果"><h2>驗收結果</h2>
   <table><tr><th>知識點</th><th>操作的控制項</th><th>公式動畫</th><th>對照的手算或參考</th><th>結果</th><th>限制</th></tr>
-  <!-- 依 check_page.py 的輸出，一個知識點一列 --></table>
+  <!-- 依 check_page.py 的輸出，一個知識點一列；結果用 <span class="badge ok">通過</span>、badge bad 未通過、badge low 無示範 --></table>
   <h3>報告要求對照</h3>
   <table><tr><th>要求</th><th>在本頁的位置</th><th>結果</th></tr>
   <!-- 一條要求一列，依 SKILL.md「Report requirements」表，連到頁面位置 --></table>
 </section>
 </main>
+</div>
+<script src="katex/katex.min.js"></script>
 <script src="widgets.js"></script>
 <script src="demos.js"></script>
 <script>

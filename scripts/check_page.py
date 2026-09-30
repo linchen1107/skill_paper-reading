@@ -13,7 +13,10 @@ per knowledge point:
   未通過   a control changes nothing, a check disagrees or is missing, a formula
            has no working animation, or the page errors
   無示範   the section has no demo (it must say why on the page)
-The page as a whole also fails when no section is marked data-traditional="1",
+The page as a whole also fails when the formula layer is incomplete (no formula
+sections or map, a map node pointing nowhere, a formula section missing from the
+map, an empty symbol table, a KaTeX error or an untypeset formula), when no
+section is marked data-traditional="1",
 a map entry has no section, or the text contains unconfirmed wording
 (尚未確認, 待驗證, 還沒確認), which belongs in the paper notes instead.
 The browser profile lives in _work/tmp/ and is deleted afterwards.
@@ -117,6 +120,26 @@ def main(topic_dir):
     if res["mapMissing"]:
         bad += 1
         print("未通過：地圖上有、頁面沒有的知識點:", ", ".join(res["mapMissing"]))
+    f = res.get("formulas", {})
+    problems = []
+    if not f.get("sections"):
+        problems.append("沒有任何公式節（section.eq-sec）")
+    if not f.get("mapNodes"):
+        problems.append("沒有公式關係圖（PR.formulaMap）")
+    if f.get("brokenLinks"):
+        problems.append("關係圖方塊連到不存在的位置: " + ", ".join(f["brokenLinks"]))
+    if f.get("notOnMap"):
+        problems.append("公式節不在關係圖上: " + ", ".join(f["notOnMap"]))
+    if f.get("symbols", 0) < 1:
+        problems.append("符號速查表是空的")
+    if f.get("texErrors"):
+        problems.append(f"{f['texErrors']} 個公式排版錯誤（.katex-error）")
+    if f.get("texFallback"):
+        problems.append(f"{f['texFallback']} 個公式沒有排版（katex/ 沒有載入）")
+    print(f"公式：{f.get('sections', 0)} 節、關係圖 {f.get('mapNodes', 0)} 個方塊、符號 {f.get('symbols', 0)} 個")
+    for p in problems:
+        bad += 1
+        print("未通過：" + p)
     if res.get("unconfirmed"):
         bad += 1
         print(f"未通過：頁面上有 {len(res['unconfirmed'])} 處未確認的內容，應查證後改寫，或移到論文筆記：")
