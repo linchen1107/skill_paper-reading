@@ -1,40 +1,25 @@
 # paper-reading
 
-Start with one paper, read the related research, identify where earlier methods fall short, and turn every knowledge point into interactive teaching material. Available as a Claude Code plugin and local Codex skills.
+從一篇論文展開同題文獻群，為沒有領域背景的讀者製作圖解與可操作教材。**圖優先、表其次、文字只補必要解釋。**
 
-| Skill | Purpose |
-| --- | --- |
-| `reading` | Read about 20–30 related papers; build the research narrative, knowledge-point map, and interactive page |
-| `annotate` | Create a paragraph-by-paragraph English–Chinese annotated reading of one paper |
-| `presentation` | Demonstrate the method with real data, a Python backend, and interactive labs |
+| 技能 | 用途 | 主要產出 |
+|---|---|---|
+| `reading` | 閱讀約 20–30 篇相關論文，串起問題、方法與證據，涵蓋全部知識點 | `index.html`、`papers/` |
+| `annotate` | 主論文逐段中英對照與短註解 | `annotated.html` |
+| `presentation` | 真實資料、Python 後端與可操作實驗 | `studio/lab.html`、`studio/server.py` |
 
-## Claude Code
+## 安裝
 
-Install:
+Claude Code：
 
 ```sh
 claude plugin marketplace add linchen1107/skill_paper-reading
 claude plugin install paper-reading@linchen-skills
 ```
 
-Or send this to your Claude Code agent:
+Codex：repository 內可直接使用 `.agents/skills/`；其他專案可複製這 3 個技能到個人的技能目錄。
 
-```text
-Install or update https://github.com/linchen1107/skill_paper-reading through the Claude Code marketplace so I can use it. Confirm that /paper-reading:reading, /paper-reading:annotate, and /paper-reading:presentation are available.
-```
-
-Update:
-
-```sh
-claude plugin marketplace update linchen-skills
-claude plugin update paper-reading@linchen-skills
-```
-
-## Codex
-
-Codex loads `.agents/skills/` when working in this repository. To use the skills in any project, copy them to `~/.agents/skills/`.
-
-Windows PowerShell:
+Windows PowerShell：
 
 ```powershell
 $repo = Join-Path $HOME 'skill_paper-reading'
@@ -43,7 +28,7 @@ New-Item -ItemType Directory -Force (Join-Path $HOME '.agents\skills') | Out-Nul
 Copy-Item -Path (Join-Path $repo '.agents\skills\paper-reading-*') -Destination (Join-Path $HOME '.agents\skills') -Recurse -Force
 ```
 
-macOS/Linux:
+macOS/Linux：
 
 ```sh
 git clone https://github.com/linchen1107/skill_paper-reading.git "$HOME/skill_paper-reading"
@@ -51,22 +36,16 @@ mkdir -p "$HOME/.agents/skills"
 cp -R "$HOME/skill_paper-reading/.agents/skills/." "$HOME/.agents/skills/"
 ```
 
-Or send this to your Codex agent:
+## 使用與維護
 
-```text
-Install or update the three Codex skills from https://github.com/linchen1107/skill_paper-reading in ~/.agents/skills/ so I can use them locally. Confirm that $paper-reading-reading, $paper-reading-annotate, and $paper-reading-presentation are available.
-```
+| Claude Code | Codex |
+|---|---|
+| `/paper-reading:reading` | `$paper-reading-reading` |
+| `/paper-reading:annotate` | `$paper-reading-annotate` |
+| `/paper-reading:presentation` | `$paper-reading-presentation` |
 
-To update a personal install, run `git -C "$HOME/skill_paper-reading" pull --ff-only`, then repeat the copy command above.
+提供 PDF、arXiv 連結或標題。`reading` 的小型示範解釋機制；需要真實資料與可執行 backend 時，使用 `presentation`。兩種結果都需標明來源與條件。
 
-## Usage and output
+Claude 更新：`claude plugin marketplace update linchen-skills`，再執行 `claude plugin update paper-reading@linchen-skills`。Codex 個人安裝更新：repository 執行 `git pull --ff-only` 後，重新複製技能。
 
-| Claude Code | Codex | Main output |
-| --- | --- | --- |
-| `/paper-reading:reading` | `$paper-reading-reading` | `index.html`, `papers/`, per-point checks |
-| `/paper-reading:annotate` | `$paper-reading-annotate` | `annotated.html` |
-| `/paper-reading:presentation` | `$paper-reading-presentation` | `studio/lab.html`, `studio/server.py` |
-
-Give `reading` a PDF, arXiv link, or paper title. Its interactive examples do not reproduce the paper on real data; use `presentation` when you need real data and a runnable backend.
-
-Check a reading page with `python .agents/skills/paper-reading-reading/scripts/check_page.py <topic>`. After changing a Claude skill or shared tool, regenerate the Codex skills with `python scripts/build_codex.py`.
+修改正式來源 `skills/` 後，執行 `python scripts/build_codex.py` 同步生成 `.agents/skills/`。檢查教材使用 `python scripts/check_page.py <topic>`；實驗使用 `python scripts/check_lab.py <topic>`。
