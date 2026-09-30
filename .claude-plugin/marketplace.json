@@ -1,0 +1,14 @@
+{
+  "name": "linchen-skills",
+  "description": "Research-paper reading and teaching tools maintained by weichen.",
+  "owner": {
+    "name": "weichen"
+  },
+  "plugins": [
+    {
+      "name": "paper-reading",
+      "source": "./",
+      "description": "Read research-paper clusters, annotate a paper, and build runnable teaching labs."
+    }
+  ]
+}

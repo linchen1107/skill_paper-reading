@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><!-- 論文短名 -->：論文群閱讀</title>
+<style>
+  :root { --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb; --bg: #fafaf9; --card: #fff; --accent: #2563eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.75;
+         font: 16px/1.75 "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif; }
+  nav { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid var(--line);
+        padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
+  nav a { color: var(--accent); text-decoration: none; }
+  main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-size: 26px; margin: 8px 0 4px; }
+  h2 { font-size: 21px; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  h3 { font-size: 18px; margin: 0 0 6px; }
+  section[id] { scroll-margin-top: 56px; }
+  .meta, .src { color: var(--muted); font-size: 14px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 14px; background: var(--card); }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #f3f4f6; }
+  .kp { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; margin: 16px 0; }
+  .kp dl { display: grid; grid-template-columns: 7em 1fr; gap: 4px 12px; margin: 10px 0; }
+  .kp dt { font-weight: 700; }
+  .kp dd { margin: 0; }
+  .demo { border: 1px dashed #93c5fd; border-radius: 8px; padding: 12px; margin-top: 12px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 6px; }
+  .val { min-width: 4em; color: var(--muted); }
+  .legend { display: flex; gap: 14px; font-size: 13px; margin: 2px 0 10px; }
+  .note { color: var(--muted); font-size: 13px; }
+  .error { color: #b91c1c; }
+  .figure img { max-width: 100%; border: 1px solid var(--line); }
+  .summary p { margin: 6px 0; }  @media (max-width: 640px) { .kp dl { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<nav>
+  <a href="#summary">重點整理</a><a href="#s1">1 困難</a><a href="#s2">2 傳統作法</a><a href="#s3">3 論文群</a>
+  <a href="#s4">4 方法</a><a href="#s5">5 證據</a><a href="#s6">6 已解決與未解決</a>
+  <a href="#cluster">論文群比較</a><a href="#map">知識點地圖</a><a href="#kps">知識點</a><a href="#checks">驗收結果</a>
+</nav>
+<main>
+<header>
+  <h1><!-- 使用者論文的標題 --></h1>
+  <p class="meta"><!-- 作者 年份，出處；閱讀紀錄連到 papers/<short>.md --></p>
+</header>
+
+<section id="summary" class="summary"><h2>重點整理</h2>
+  <!-- 3 句：核心問題；證據支持的改善；仍未解決的問題 -->
+</section>
+
+<section id="s1"><h2>1. 生活中的例子與困難</h2><!-- --></section>
+<section id="s2"><h2>2. 傳統作法與它的限制</h2><!-- --></section>
+<section id="s3"><h2>3. 論文群與研究缺口</h2><!-- --></section>
+<section id="s4"><h2>4. 核心想法與方法</h2><!-- --></section>
+<section id="s5"><h2>5. 證據與改善幅度</h2><!-- --></section>
+<section id="s6"><h2>6. 已解決與未解決</h2><!-- --></section>
+
+<section id="cluster"><h2>論文群比較</h2>
+  <table><tr><th>論文</th><th>角色</th><th>解決的困難</th><th>核心設計</th><th>證據（出處）</th><th>留下的問題</th><th>閱讀狀態</th></tr>
+  <!-- 一篇一列；論文寫作者與年份，連到 papers/<short>.md --></table>
+</section>
+
+<section id="map"><h2>知識點地圖</h2>
+  <!-- 依組別列出每個知識點：編號、名稱、原論文位置，連到 #kp-<N> -->
+</section>
+
+<section id="kps"><h2>知識點</h2>
+  <!-- 每個知識點一個區塊。有公式的知識點加 data-formula="1"，它的示範必須回傳 anim（公式動畫）；
+       示範傳統作法的知識點加 data-traditional="1"，放在論文方法之前：
+  <section class="kp" id="kp-1" data-kp="1" data-formula="1">
+    <h3>知識點 1　名稱</h3>
+    <p class="src">原論文位置：Section …；相關論文：作者 年份</p>
+    <dl><dt>生活例子</dt><dd>…</dd><dt>困難</dt><dd>…</dd><dt>傳統作法</dt><dd>…</dd>
+        <dt>論文的方法</dt><dd>…</dd><dt>延伸</dt><dd>…</dd></dl>
+    <div class="demo" id="demo-1"></div>   沒有可計算的內容時，改放 <div class="figure">原論文圖或小表</div>，並寫出原因
+  </section> -->
+</section>
+
+<section id="checks"><h2>驗收結果</h2>
+  <table><tr><th>知識點</th><th>操作的控制項</th><th>公式動畫</th><th>對照的手算或參考</th><th>結果</th><th>限制</th></tr>
+  <!-- 依 check_page.py 的輸出，一個知識點一列 --></table>
+  <h3>報告要求對照</h3>
+  <table><tr><th>要求</th><th>在本頁的位置</th><th>結果</th></tr>
+  <!-- 一條要求一列，依 SKILL.md「Report requirements」表，連到頁面位置 --></table>
+</section>
+</main>
+<script src="widgets.js"></script>
+<script src="demos.js"></script>
+<script>
+  if (location.search.indexOf('selftest') >= 0) {
+    var s = document.createElement('script'); s.src = '_work/selftest.js'; document.body.appendChild(s);
+  }
+</script>
+</body>
+</html>
