@@ -75,6 +75,14 @@
     };
     // figures of the paper are the real files (original bitmap or vector), not screenshots
     out.figures = [...document.querySelectorAll('main .figure img, main figure img')].map(i => ({ src: i.getAttribute('src') || '', ok: /-real\.(svg|png|jpe?g|gif|webp)$/i.test(i.getAttribute('src') || ''), loaded: i.complete && i.naturalWidth > 0 }));
+    // clicking a figure opens it in the popup
+    out.figures.forEach(f => {
+      const img = [...document.querySelectorAll('main .figure img, main figure img')].find(i => i.getAttribute('src') === f.src);
+      img.click();
+      const lb = document.querySelector('#pr-lightbox .lb-stage img');
+      f.popup = !!lb && lb.getAttribute('src') === f.src;
+      if (window.PR && PR.lightbox) PR.lightbox.close();
+    });
     // the page shows confirmed content only; unconfirmed items belong in the paper notes
     const text = (document.querySelector('main') || document.body).innerText;
     out.unconfirmed = [];

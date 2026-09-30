@@ -162,10 +162,17 @@ def build_presentation() -> str:
     )
     body = replace_required(
         body,
-        "then list in the chat and wait for one reply:",
-        "then list in the chat. Continue if the user already authorized this scope; otherwise wait for one reply:",
+        "Then list in the chat and wait for one reply:",
+        "Then list in the chat. Continue if the user already authorized this scope; otherwise wait for one reply:",
         name,
     )
+    body = replace_required(
+        body,
+        "`<plugin>` is the folder of this plugin (the parent of `skills/`).",
+        "`<skill>` is the directory containing this `SKILL.md`.",
+        name,
+    )
+    body = body.replace("<plugin>/", "<skill>/")
     body = replace_required(
         body,
         "Same as $paper-reading-reading: a whole run within about 10% of a Pro plan's weekly usage (about 1% on Max 20x). Sonnet throughout, every subagent `model: sonnet`; read files once and search instead of rereading; check by values, not screenshots.",
@@ -189,7 +196,7 @@ def main() -> None:
         (folder / "SKILL.md").write_text(build(), encoding="utf-8")
 
     reading = TARGET / "paper-reading-reading"
-    for script in ("extract_figures.py", "fetch_papers.py", "check_page.py", "selftest.js"):
+    for script in ("extract_figures.py", "fetch_papers.py", "check_page.py", "selftest.js", "serve.py"):
         dest = reading / "scripts"
         dest.mkdir(exist_ok=True)
         shutil.copy2(ROOT / "scripts" / script, dest / script)
@@ -202,6 +209,12 @@ def main() -> None:
     sources.mkdir(exist_ok=True)
     shutil.copy2(ROOT / "skills" / "reading" / "references" / "sources.md",
                  sources / "sources.md")
+
+    presentation = TARGET / "paper-reading-presentation"
+    (presentation / "scripts").mkdir(exist_ok=True)
+    for script in ("check_lab.py", "check_page.py", "serve.py"):
+        shutil.copy2(ROOT / "scripts" / script, presentation / "scripts" / script)
+    shutil.copytree(ROOT / "templates" / "studio", presentation / "templates" / "studio", dirs_exist_ok=True)
 
     annotate_scripts = TARGET / "paper-reading-annotate" / "scripts"
     annotate_scripts.mkdir(exist_ok=True)

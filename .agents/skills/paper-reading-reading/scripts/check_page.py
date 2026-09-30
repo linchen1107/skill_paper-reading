@@ -144,6 +144,8 @@ def main(topic_dir):
             problems.append("論文圖用了截圖，應改用 fig<N>-real.*: " + fg["src"])
         elif not fg["loaded"]:
             problems.append("論文圖載入失敗: " + fg["src"])
+        elif not fg.get("popup"):
+            problems.append("點論文圖沒有開出彈窗: " + fg["src"])
     print(f"論文圖：{len(figs)} 張，真實圖檔 {sum(f['ok'] for f in figs)} 張")
     for p in problems:
         bad += 1

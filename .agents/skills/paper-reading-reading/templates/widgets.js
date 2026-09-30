@@ -216,6 +216,21 @@
 #pr-top{position:fixed;right:22px;bottom:22px;width:40px;height:40px;border-radius:50%;border:1px solid #334155;background:#111820;color:#67e8f9;font-size:18px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
 #pr-top.show{opacity:1;pointer-events:auto}
 #pr-top:hover{border-color:#67e8f9}
+#toc .toc-lab{margin:0 0 12px;padding:8px 10px;border:1px solid #155e75;border-radius:8px;background:#0e2530;color:#67e8f9;font-weight:700}
+#toc .toc-lab:hover{border-color:#67e8f9}
+#pr-lightbox{position:fixed;inset:0;z-index:100;background:rgba(3,7,12,.92);display:flex;flex-direction:column}
+#pr-lightbox .lb-stage{flex:1;display:flex;align-items:center;justify-content:center;padding:56px 70px 8px;min-height:0}
+#pr-lightbox .lb-stage img{box-sizing:border-box;background:#fff;border-radius:6px;padding:12px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#pr-lightbox .lb-foot{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;justify-content:center;padding:10px 24px 18px;color:#cbd5e1;font-size:14px}
+#pr-lightbox .lb-pos{color:#94a3b8;font-family:ui-monospace,Consolas,monospace}
+#pr-lightbox .lb-cap{max-width:70em}
+#pr-lightbox .lb-open{color:#67e8f9}
+#pr-lightbox button{position:absolute;background:rgba(15,23,42,.8);color:#e2e8f0;border:1px solid #334155;border-radius:50%;width:44px;height:44px;font-size:24px;line-height:1;cursor:pointer}
+#pr-lightbox button:hover{border-color:#67e8f9;color:#67e8f9}
+#pr-lightbox .lb-close{top:14px;right:18px}
+#pr-lightbox .lb-prev{left:14px;top:50%;transform:translateY(-50%)}
+#pr-lightbox .lb-next{right:14px;top:50%;transform:translateY(-50%)}
+main .figure img{cursor:zoom-in}
 .pr-flash{animation:prflash 2.2s ease-out}
 @keyframes prflash{0%,35%{box-shadow:0 0 0 2px #67e8f9,0 0 26px rgba(103,232,249,.45)}100%{box-shadow:0 0 0 0 transparent}}
 .kp-nav{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;margin:6px 0 10px;font-size:13px;color:#94a3b8}
@@ -439,8 +454,70 @@
     });
   }
 
+  // ---------- Figure popup: a paper figure opens large over the page, with its caption; arrows step through all ----------
+  function lightbox() {
+    const figs = () => [...document.querySelectorAll('main .figure img, main figure img')];
+    let box = null, idx = 0;
+    function close() { if (box) { box.remove(); box = null; document.body.style.overflow = ''; } }
+    function show(i) {
+      const list = figs(); if (!list.length) return;
+      idx = (i + list.length) % list.length;
+      const img = list[idx], fig = img.closest('figure, .figure');
+      const cap = fig && fig.querySelector('figcaption, .note');
+      const src = img.getAttribute('src');
+      if (!box) {
+        box = el('div', { id: 'pr-lightbox', role: 'dialog', 'aria-modal': 'true' });
+        box.addEventListener('click', ev => { if (ev.target === box || ev.target.classList.contains('lb-stage')) close(); });
+        document.body.append(box); document.body.style.overflow = 'hidden';
+      }
+      box.innerHTML = '';
+      const btn = (cls, text, label, fn) => { const b = el('button', { type: 'button', class: cls, 'aria-label': label, text }); b.addEventListener('click', ev => { ev.stopPropagation(); fn(); }); return b; };
+      const big = el('img', { src, alt: img.getAttribute('alt') || '' });
+      const stage = el('div', { class: 'lb-stage' }, big);
+      // scale the figure to fill the stage: vector figures have a small built-in size, so enlarge them too
+      const fit = () => {
+        const w = big.naturalWidth || 800, h = big.naturalHeight || 600;
+        const cs = getComputedStyle(stage);
+        const sw = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), sh = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+        if (sw <= 0 || sh <= 0) return;
+        const k = Math.min(sw / w, sh / h);
+        big.style.width = Math.round(w * k) + 'px'; big.style.height = Math.round(h * k) + 'px';
+      };
+      big.addEventListener('load', fit); requestAnimationFrame(fit);
+      box._fit = fit;
+      const foot = el('div', { class: 'lb-foot' });
+      foot.append(el('span', { class: 'lb-pos', text: `${idx + 1} / ${list.length}` }));
+      if (cap) foot.append(el('span', { class: 'lb-cap', text: cap.textContent }));
+      foot.append(el('a', { href: src, target: '_blank', rel: 'noopener', class: 'lb-open', text: '開啟原始檔案' }));
+      box.append(btn('lb-close', '×', '關閉', close), stage, foot);
+      if (list.length > 1) box.append(btn('lb-prev', '‹', '上一張', () => show(idx - 1)), btn('lb-next', '›', '下一張', () => show(idx + 1)));
+    }
+    document.addEventListener('click', ev => {
+      const img = ev.target.closest && ev.target.closest('main .figure img, main figure img');
+      if (!img || ev.ctrlKey || ev.metaKey) return;
+      ev.preventDefault(); show(figs().indexOf(img));
+    });
+    window.addEventListener('resize', () => { if (box && box._fit) box._fit(); });
+    document.addEventListener('keydown', ev => {
+      if (!box) return;
+      if (ev.key === 'Escape') close(); else if (ev.key === 'ArrowLeft') show(idx - 1); else if (ev.key === 'ArrowRight') show(idx + 1);
+    });
+    PR.lightbox = { show, close, isOpen: () => !!box };
+  }
+
+  // When the page is served (python serve.py) and the topic has labs, the sidebar offers them.
+  function labLink() {
+    const side = document.getElementById('toc');
+    if (!side || !/^https?:/.test(location.protocol)) return;
+    fetch('studio/lab.html', { method: 'HEAD' }).then(r => {
+      if (!r.ok || side.querySelector('.toc-lab')) return;
+      const a = el('a', { href: 'studio/lab.html', class: 'toc-lab' }, el('span', { class: 'toc-tag', text: 'LAB' }), el('span', { class: 'toc-name', text: '真實資料實驗 →' }));
+      side.prepend(a);
+    }).catch(() => {});
+  }
+
   function boot() {
-    ensureCss(); renderTexIn(document); buildToc(); pageChrome(); kpNav(); wireLinks();
+    ensureCss(); renderTexIn(document); buildToc(); pageChrome(); kpNav(); wireLinks(); lightbox(); labLink();
     let t = null, w0 = window.innerWidth;
     window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => {
       if (Math.abs(window.innerWidth - w0) < 40) return; w0 = window.innerWidth;
@@ -566,4 +643,9 @@
   };
 
   PR.check = function (id, name, fn) { PR.checks.push({ id, name, fn }); };
+
+  // For other pages built on these widgets (the presentation lab page): draw a plot, typeset, run a formula animation.
+  PR.plot = (box, spec) => drawPlot(box, spec);
+  PR.anim = (box, anim, plotHost) => renderAnim(box, anim, {}, plotHost);
+  PR.table = rows => tableOf(rows);
 })();
