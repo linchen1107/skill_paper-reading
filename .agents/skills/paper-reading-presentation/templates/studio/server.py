@@ -3,7 +3,7 @@
 Start:   python studio/server.py            (or: python serve.py in the topic folder)
 Options: --port N (first port to try, default 8000), --no-open
 
-Serves the whole topic folder on 127.0.0.1 (the reading page, the figures and
+Serves the whole topic folder on 127.0.0.1, or on --host (the reading page, the figures and
 studio/lab.html share one address) and one JSON endpoint per lab:
 
   GET  /api/labs           the labs and their parameters (lab.html builds its controls from this)
@@ -20,8 +20,10 @@ import functools
 import hashlib
 import http.server
 import json
+import os
 import pickle
 import socket
+import subprocess
 import sys
 import time
 import traceback
@@ -224,26 +226,50 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                             "trace": traceback.format_exc().splitlines()[-6:]}, 500)
 
 
-def free_port(start):
+def free_port(host, start):
     for port in range(start, start + 50):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if s.connect_ex(("127.0.0.1", port)) != 0:
+            try:
+                s.bind((host, port))
                 return port
+            except OSError:
+                continue
     sys.exit(f"{start} 到 {start + 49} 之間沒有可用的埠號")
+
+
+def remote_hint(host, port):
+    """Over SSH the browser runs on another machine, which cannot open 127.0.0.1 of this one."""
+    if host != "127.0.0.1" or not (os.environ.get("SSH_CONNECTION") or os.environ.get("SSH_CLIENT")):
+        return ""
+    ts = ""
+    try:
+        out = subprocess.run(["tailscale", "ip", "-4"], capture_output=True, text=True, timeout=5)
+        ts = out.stdout.split()[0] if out.returncode == 0 and out.stdout.split() else ""
+    except (OSError, subprocess.SubprocessError):
+        pass
+    lines = ["這是遠端連線：你的瀏覽器開不到這台機器的 127.0.0.1。"]
+    if ts:
+        lines.append(f"  只給自己的 Tailscale 裝置看：加上 --host {ts}，網址會是 http://{ts}:{port}/")
+    lines.append(f"  或在自己的電腦轉接：ssh -L {port}:127.0.0.1:{port} <帳號>@<這台機器>")
+    return "\n".join(lines)
 
 
 def main():
     ap = argparse.ArgumentParser(description="paper-reading lab backend")
     ap.add_argument("--port", type=int, default=8000)
+    ap.add_argument("--host", default="127.0.0.1", help="address to listen on (default: this machine only)")
     ap.add_argument("--no-open", action="store_true")
     args = ap.parse_args()
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    port = free_port(args.port)
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", port),
+    port = free_port(args.host, args.port)
+    server = http.server.ThreadingHTTPServer((args.host, port),
                                              functools.partial(Handler, directory=str(TOPIC)))
-    url = f"http://127.0.0.1:{port}/studio/lab.html"
-    print(f"實驗頁：{url}\n閱讀頁：http://127.0.0.1:{port}/index.html\n按 Ctrl+C 停止", flush=True)
+    url = f"http://{args.host}:{port}/studio/lab.html"
+    print(f"實驗頁：{url}\n閱讀頁：http://{args.host}:{port}/index.html\n按 Ctrl+C 停止", flush=True)
+    hint = remote_hint(args.host, port)
+    if hint:
+        print(hint, flush=True)
     if not args.no_open:
         webbrowser.open(url)
     try:

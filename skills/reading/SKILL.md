@@ -17,7 +17,13 @@ Every part must link to the others: **difficulty → why the traditional approac
 - **Every technical term is explained where it first appears in reading order**, in the same sentence, in plain words: names of models, datasets and methods, abbreviations, and English terms. List them in `demos.js` with `PR.terms({'hidden state': '模型讀到每個字時，內部產生的一長串數字。', …})`, and write the first use as `<dfn data-term="hidden state">hidden state</dfn>`; later uses show the explanation on hover. A term the storyline does not need is left out of the storyline, not explained.
 - **Every number has a scale or a comparison**: what is good, what is chance, what the traditional approach gets (for example 「AUC 0.65；0.5 等於亂猜，1 等於全對」).
 - **Nothing is referred to before it is introduced.** A sentence that needs a later section either moves after it or says the needed idea in one plain sentence.
-- **The page opens without jargon**: 3 to 4 sentences on what the paper wants to solve, why it matters, and its idea in everyday words.
+- **The page opens without jargon**: 4 lines (問題、作者的做法、結果、限制), each one sentence in everyday words.
+- **The reader scans; write for that.** Most web readers scan rather than read word by word (Nielsen Norman Group: 79% scan, 16% read word by word) and plain-language guidance splits sentences over 25 English words and keeps paragraphs to 5 sentences (GOV.UK). So:
+  - **Each thing is said once.** The 4-line takeaway, the 6 storyline steps and the knowledge points do not repeat each other; there is no separate summary.
+  - **Length limits**, checked by `check_page.py`: the storyline, takeaway included, at most 3,000 characters; a step at most 3 paragraphs plus 1 figure or 1 table; a paragraph at most 5 sentences; a sentence at most 40 characters (CJK characters, plus 1 per English word or number); a knowledge-point field at most 2 sentences.
+  - **The first sentence of every step and every field is its conclusion**; what follows supports it.
+  - **The text must make sense without touching a demo**; the demo lets the reader check it (Victor, "Explorable Explanations"; Hohman et al. 2020).
+  - **Cut what does not serve the paper**: history of a name, side facts, a second example of the same point.
 
 ## Output language and wording
 
@@ -27,8 +33,8 @@ All user-facing output of this skill (the page, notes, and chat replies) is writ
 - Explain a technical term in one plain sentence the first time it appears (see "Who reads the page").
 - Use Taiwanese terminology, not Mainland terms: 影片 not 視頻, 資料 not 數據 (for data), 品質 not 質量, 資訊 not 信息, 預設 not 默認, 程式碼 not 代碼, 模組 not 模塊, 網路 not 網絡, 支援 not 支持 (for software support), 檔案 not 文件 (for files).
 - **Cite papers by author and year** (for example Wang et al. 2017), linked to their note. Short ids such as `wang17` are file names only and never appear in the text.
-- **No compressed coined words.** Say it in a plain phrase instead (「背景是否接近白雜訊」, not 「白性」); a technical term gets a plain one-sentence explanation the first time it appears.
-- **Evidence labels go in parentheses after the claim**, for example 「……整體平移（原論文報告，Section I）」; never as a sentence fragment on its own.
+- **No compressed coined words and no names the page makes up.** Say it in a plain phrase instead (「背景是否接近白雜訊」, not 「白性」), and use the paper's term or the standard term of the field (「光譜」, not 「亮度串」); a reader must be able to look a name up. Sentences such as 「本頁稱為……」「我們稱它……」 fail `check_page.py`.
+- **Sources stay out of the sentences.** Each storyline step ends with one grey line, `<p class="src">論文：Table III（p.5）；我們重算：知識點 7</p>`; a knowledge point keeps its sources in its `.src` line under the title; when one number needs its own location, a small `<span class="cite">p.5</span>` after the sentence. Brackets such as 「（原論文報告，Section III.A，p.3）」 inside a sentence fail `check_page.py`.
 - No filler, slogans, invented abbreviations or compressed coined phrases. Say what happened, its effect, and the evidence.
 - Use Arabic numerals.
 
@@ -55,21 +61,22 @@ These come from the lab's review of how a paper must be reported (see [reference
 |---|---|---|
 | 1 | Show understanding, not slides; interactive and playable | Every computable knowledge point has a demo that `check_page.py` passes |
 | 2 | Report a cluster of papers, not one (20+) | The cluster table lists about 20 papers, each tied to a place in the user's paper |
-| 3 | Work out what the paper actually solves | Section 1 names the problem and the difficulties before any method appears |
-| 4 | Open with a concrete failure and an everyday example | Section 1 starts from one concrete case where the existing approach fails (what was expected, what happened, the effect, with its source), then an everyday example of why it is hard; knowledge points open with an everyday example |
-| 5 | Explain the traditional approach in great detail | Section 2 explains it, and at least one knowledge point (`data-traditional="1"`) runs the traditional method on the same data as the paper's method, placed before the paper's method |
+| 3 | Work out what the paper actually solves | Step 1 names the problem and the difficulties before any method appears |
+| 4 | Open with a concrete failure and an everyday example | Step 1 starts from one concrete case where the existing approach fails (what was expected, what happened, the effect, with its source), then an everyday example of why it is hard; knowledge points open with an everyday example |
+| 5 | Explain the traditional approach in great detail | Step 2 explains it, and at least one knowledge point (`data-traditional="1"`) runs the traditional method on the same data as the paper's method, placed before the paper's method |
 | 6 | Explain every knowledge point with a program (10, 20, 60 of them) | The map lists every point, and each has a demo or says why it cannot have one |
 | 7 | Do more than the paper; restore what it cut | Background and derivations the paper only names are knowledge points of their own |
 | 8 | Animate the math | Every knowledge point with a formula (`data-formula="1"`) has a formula animation that steps through the computation with this run's numbers |
 | 9 | The page shows understanding, not open questions | The page contains confirmed content only (see "What the page shows") |
 | 10 | Formulas: only the key ones in the text, each after an example; the rest on demand | 1 to 5 key formulas, each a card after its knowledge point's demo, with a plain sentence whose coloured words match the formula's coloured terms; no display formula in the storyline; every formula of the paper, the formula map and the symbol table in the 附錄 at the end |
 | 11 | Written for a reader who knows nothing about the field | Every term is in the term list and explained at its first use, capitalised jargon in the storyline is all listed, and the latest cold read lists nothing (`check_page.py`) |
+| 12 | Short enough to read; no noise | Each thing is said once; the storyline, paragraphs, sentences and knowledge-point fields are within their limits; no source inside a sentence; no made-up names; the cold read lists nothing to delete (`check_page.py`) |
 
 ## What the page shows
 
 The page teaches the paper; it is not an audit of it and not a list of open questions.
 
-- **Confirmed content only.** On `index.html` every statement is either reported by a paper (原論文報告, with location) or computed in this run (本次實際重現). The label 待驗證的推論 and the words 尚未確認, 待驗證 and 還沒確認 do not appear on the page; `check_page.py` fails the page if they do.
+- **Confirmed content only.** On `index.html` every statement is either reported by a paper or computed in this run, and the step's source line says which (論文：… with location; 我們重算：… with the knowledge point). The labels 原論文報告 and 本次實際重現 are for the notes and the check tables, not for the prose. The label 待驗證的推論 and the words 尚未確認, 待驗證 and 還沒確認 do not appear on the page; `check_page.py` fails the page if they do.
 - **Check what can be checked, during the run.** When a question can be settled by reading the paper again, its arXiv or supplementary version, the official code, a cited paper, or by recomputing, settle it and write the answer. Do not hand it to the reader.
 - **What cannot be settled goes into the notes.** Open questions, suspected typos and interpretations stay in `papers/<short>.md` under 我的判讀, with their label. They do not appear on the page.
 - **Errors in the paper, when confirmed**, appear on the page only where a reader needs them to understand a result correctly, inside that knowledge point or evidence paragraph, stated as a fact with its location (for example a table value outside the metric's definition). There is no separate list of the paper's errors on the page.
@@ -87,7 +94,7 @@ Assume the user is on a small plan: a whole run, stages 0 to 5, should use no mo
 
 ## Evidence labels
 
-Every claim carries one of these 3 labels, written exactly like this:
+Every claim in the notes carries one of these 3 labels, written exactly like this. On the page the same distinction is made in the source lines (see "Output language and wording"), not with the label words inside the sentences.
 
 | Label | Meaning |
 |---|---|
@@ -97,7 +104,7 @@ Every claim carries one of these 3 labels, written exactly like this:
 
 - **Observing a failure does not mean the cause is known.** Keep the phenomenon and the cause separate; state a cause as confirmed only when the paper's analysis or an experiment supports it.
 - **Numbers from different test conditions cannot be ranked directly.** When data splits, model size, training data, evaluation rules or cost differ, describe the conditions under which each number holds.
-- **A demo's result is not the paper's experimental result.** A phenomenon computed on demo data is labelled 本次實際重現 with a note that it uses demo data; it must not stand in for the paper's results on the real dataset.
+- **A demo's result is not the paper's experimental result.** A phenomenon computed on demo data is marked as our computation with a note that it uses demo data; it must not stand in for the paper's results on the real dataset.
 
 ## How to read a paper
 
@@ -153,8 +160,8 @@ Do not ask for the reading purpose. If the user did not state it, identify the p
 
 - **Open with one concrete failure, then an everyday example.** First a real case from the paper or its cluster: what was expected, what actually happened, and the effect, with its source (for LUNA: the model answers that water vapour is denser than air, Fig. 4). Then a technology or phenomenon from everyday life that shows why the problem is hard; for audio normalization, for example, recording and Dolby noise reduction: why signal-to-noise ratio (SNR) and dynamic range are hard to handle. The audience needs a picture first; only then can they follow the method.
 - **Explain the traditional approach in great detail, and run it.** How it works, what it solves, and where it falls short are prerequisites for understanding the paper. Papers usually assume the reader already knows this and start from the later part; the report must put it back. The traditional approaches the paper improves on or competes with become knowledge points marked `data-traditional="1"`, placed before the paper's method, and their demos run on the same data as the paper's method so the two can be compared side by side, including the settings where the traditional approach does as well or better.
-- **Difficulties need a situation and a source.** Record under which conditions which problem appears, its effect, and the location in the paper or demo. A shortcoming the authors state in the Introduction without supporting evidence is written on the page as the authors' statement (原論文報告, with location); never invent a failure.
-- **A failure measured in this run counts as evidence.** When the traditional approach or the paper's method is run on real data and fails (for example an estimate that comes out 11% to 31% low), the failure is written on the page as 本次實際重現, with the dataset, the files or sample count, the settings and the code location. On generated data it is also 本次實際重現, stated as generated data, and it shows how the method behaves, not how it behaves on the real task.
+- **Difficulties need a situation and a source.** Record under which conditions which problem appears, its effect, and the location in the paper or demo. A shortcoming the authors state in the Introduction without supporting evidence is written on the page as the authors' statement (「作者指出……」, with the location in the source line); never invent a failure.
+- **A failure measured in this run counts as evidence.** When the traditional approach or the paper's method is run on real data and fails (for example an estimate that comes out 11% to 31% low), the failure is written on the page as our computation, with the dataset, the files or sample count, the settings and the knowledge point in the source line. On generated data it is stated as generated data, and it shows how the method behaves, not how it behaves on the real task.
 
 ## Stage 3: knowledge-point map
 
@@ -178,19 +185,18 @@ All knowledge points live on one page and share one widget library. The page, th
 - Write only `<topic>/demos.js`: one `PR.demo(...)` per knowledge point that can be computed, and at least one `PR.check(...)` per demo that compares a setting with a hand calculation. No knowledge point gets its own page or program.
 - `index.html`, `widgets.js` and `demos.js` are plain files (no modules, no `fetch`), so the page also works when double-clicked; small data is embedded in `demos.js`.
 
-**Page order.** The page reads from top to bottom as one argument: the conclusion, the problem, the traditional approach, the paper's idea and evidence, then each knowledge point, and last the full formulas for readers who want them. A reader who stops anywhere has understood everything above that point.
+**Page order.** The page reads from top to bottom as one argument: the conclusion, the problem, the traditional approach, the paper's idea and evidence, then each knowledge point, and last the full formulas for readers who want them. A reader who stops anywhere has understood everything above that point, and nothing is said twice.
 
-1. **The opening** (`<section id="story">` with `<p class="lede">`): 3 to 4 sentences without jargon.
-2. **The storyline** (stage 5). It carries no display formula; it explains in words, numbers and the paper's figures, and links each step to its knowledge point.
+1. **The takeaway** (`<section id="story">` with `<div class="lede takeaway">`): 4 lines without jargon, 問題、作者的做法、結果、限制. It replaces a separate summary.
+2. **The storyline** (stage 5): 6 short steps. It carries no display formula; it explains in words, numbers and the paper's figures, and links each step to its knowledge point.
 3. **The knowledge-point map and the knowledge points**, each showing its key formula card when it has one.
-4. **重點整理**: the 3-sentence summary, for a reader who has now seen the problem and the method.
-5. **The cluster comparison.**
-6. **附錄** (`<div id="appendix">`): the formula map (`PR.formulaMap`: one lane per strand of the method, one box per formula with its number and page, arrows naming the step between formulas, a dashed arrow for a proof, the final objective highlighted, and one caption paragraph telling the derivation in words), the symbol table, then every formula one by one, grouped in the order of the derivation: a `section.eq-sec` with its number as `data-tag`, the formula typeset in LaTeX (`tex-block`, terms coloured with `\ca` `\cb` `\cc` `\cd`), its page and section, each symbol explained in one line, and links to the formula it comes from, the one it leads to, and the knowledge point that computes it.
-7. **The check results.**
+4. **The cluster comparison.**
+5. **附錄** (`<div id="appendix">`): the formula map (`PR.formulaMap`: one lane per strand of the method, one box per formula with its number and page, arrows naming the step between formulas, a dashed arrow for a proof, the final objective highlighted, and one caption paragraph telling the derivation in words), the symbol table, then every formula one by one, grouped in the order of the derivation: a `section.eq-sec` with its number as `data-tag`, the formula typeset in LaTeX (`tex-block`, terms coloured with `\ca` `\cb` `\cc` `\cd`), its page and section, each symbol explained in one line, and links to the formula it comes from, the one it leads to, and the knowledge point that computes it.
+6. **The check results.**
 
 **Knowledge points.**
 
-- Each is one section of `index.html`: its number as `<span class="chip">` (`chip trad` for a traditional approach), then real-life example, difficulty, traditional approach, the paper's method and extension, one or two sentences each, then its demo, then its key formula card if it has one.
+- Each is one section of `index.html`: its number as `<span class="chip">` (`chip trad` for a traditional approach), its `.src` line with the paper's location and related papers, then real-life example, difficulty, traditional approach, the paper's method and extension, at most 2 sentences each with the conclusion first and no source inside them, then its demo, then its key formula card if it has one. What the demo shows is said in the demo's own result line, not repeated in the fields.
 - **Key formula card** (`<div class="keyeq">`, template in `page.html`): after the demo, so the reader has already seen the numbers before the general form. It holds one plain sentence that says what the formula computes, with its key words coloured (`<span class="w-a">` to `w-d`) to match the formula's terms (`\ca` to `\cd`); pointing at either marks both. Then the formula, and a collapsed 符號與出處 with its symbols, location and a link to its 附錄 section. The widgets add links from every knowledge point to its formulas in the 附錄.
 - **Real interaction.** When the user changes an input, the result is recomputed by code running the algorithm, not a switch between pre-made images. Keep the cases where the paper's method still does poorly.
 - **Animate the math.** A point whose method is a formula is marked `data-formula="1"`, and its `compute` returns `anim`: the formula taken apart into frames, from the definition through each substitution to the result, with the current numbers filled in; a frame may carry a plot that changes with it (for example a transition matrix filling in count by count). The reader can play, pause and step. The animation is recomputed from the current inputs, never pre-drawn.
@@ -199,31 +205,33 @@ All knowledge points live on one page and share one widget library. The page, th
 
 **Figures.**
 
-- **The paper's own figures, never screenshots.** A figure shown on the page is its `fig<N>-real.*` file, copied to `<topic>/figs/<short>-fig<N>-real.<ext>` and placed in the section that discusses it: `<figure class="figure">` with `<figcaption>原論文 Fig. N（p.X）：…</figcaption>`. The reading copy `fig<N>.png` and page renders never appear on the page. A figure that could not be extracted as a real file is cited by number and page instead.
+- **The paper's own figures, never screenshots.** A figure shown on the page is its `fig<N>-real.*` file, copied to `<topic>/figs/<short>-fig<N>-real.<ext>` and placed in the section that discusses it: `<figure class="figure">` with `<figcaption>原論文 Fig. N（p.X）：…</figcaption>`, the caption one or two sentences on what to look at. The template caps a figure's height at about half a screen; the popup shows it large. The reading copy `fig<N>.png` and page renders never appear on the page. A figure that could not be extracted as a real file is cited by number and page instead.
 - Clicking a figure opens it in a popup sized to the window, with its caption; the arrow keys step through all figures.
 
-**Styling.** Use the template's classes rather than new styles: key numbers of the storyline in `.stats` cards, reading status and check results as `.badge` (`ok`, `mid`, `low`, `bad`), wide tables in `.table-wrap`, a paper's name as the link to its note. Prose keeps the template's reading width.
+**Styling.** Use the template's classes rather than new styles: the 4-line takeaway in `.takeaway`, a step's sources in its last `<p class="src">`, a single location after a sentence in `<span class="cite">`, key numbers of the storyline in `.stats` cards, reading status and check results as `.badge` (`ok`, `mid`, `low`, `bad`), wide tables in `.table-wrap`, a paper's name as the link to its note. Prose keeps the template's reading width.
 
 **Where the computation runs.** In the browser. Computation that needs Python packages, a model or large data belongs to the labs of paper-reading:presentation (stage 0, item 5), not to this page.
 
-**Acceptance.** Run `python <plugin>/scripts/check_page.py <topic>`. It opens the page in the Chrome, Edge or Chromium already on the machine, moves every control of every demo and confirms the output changes, steps through every formula animation, runs every `PR.check`, opens every figure, and prints one line per knowledge point (通過 / 未通過 / 無示範). The page as a whole fails when the formula layer is incomplete (no formula map, a box linking nowhere, a formula section missing from the map, an empty symbol table, a formula KaTeX could not typeset), when the key formulas break their rules (none, more than 5, before their demo, without a plain sentence whose coloured words match the formula), when a display formula appears in the storyline, when the formula map is not in the 附錄, when a listed term is used before it is explained or capitalised jargon in the storyline is not listed, when the latest cold read is missing, older than `index.html` or lists anything, when a figure is a screenshot or does not open, when no knowledge point runs a traditional approach, when a map entry has no section, or when unconfirmed wording appears. It also writes `_work/verify/reading_text.txt` for the cold read: run it as [references/cold-read.md](references/cold-read.md) describes, fix what it lists, and repeat until the list is empty (at most 3 rounds, then report what remains). Fix what fails and run it again. Copy its lines into the 驗收結果 table, then fill the 報告要求對照 table. No screenshots.
+**Acceptance.** Run `python <plugin>/scripts/check_page.py <topic>`. It opens the page in the Chrome, Edge or Chromium already on the machine, moves every control of every demo and confirms the output changes, steps through every formula animation, runs every `PR.check`, opens every figure, and prints one line per knowledge point (通過 / 未通過 / 無示範). The page as a whole fails when the formula layer is incomplete (no formula map, a box linking nowhere, a formula section missing from the map, an empty symbol table, a formula KaTeX could not typeset), when the key formulas break their rules (none, more than 5, before their demo, without a plain sentence whose coloured words match the formula), when a display formula appears in the storyline, when the formula map is not in the 附錄, when a listed term is used before it is explained or capitalised jargon in the storyline is not listed, when the latest cold read is missing, older than `index.html` or lists anything, when a figure is a screenshot or does not open, when no knowledge point runs a traditional approach, when a map entry has no section, when unconfirmed wording appears, or when the reading load is over its limits (storyline over 3,000 characters, a paragraph over 5 sentences, a sentence over 40 characters, a knowledge-point field over 2 sentences, a source inside a sentence, a name the page made up). It also writes `_work/verify/reading_text.txt` for the cold read: run it as [references/cold-read.md](references/cold-read.md) describes, fix what it lists, including what it marks as repeated or noise, and repeat until both lists are empty (at most 3 rounds, then report what remains). Fix what fails and run it again. Copy its lines into the 驗收結果 table, then fill the 報告要求對照 table. No screenshots.
 
 ## Stage 5: report storyline
 
 The storyline opens `index.html`, right after the opening sentences. It connects the cluster, the difficulties and the knowledge points, and each section links to the knowledge-point sections it relies on.
 
-Use these Chinese section titles on the page:
+Use these Chinese step titles on the page (the template has them; `data-toc-name` keeps the sidebar entries short):
 
-| Section title | What the reader should understand |
+| Step | What the reader should understand |
 |---|---|
-| 1. 生活中的例子與困難 | What problem does this cluster address? What does it correspond to in daily life? What makes it hard? |
-| 2. 傳統作法與它的限制 | How the traditional approach works, where it falls short, and the effect |
-| 3. 論文群與研究缺口 | Scope and each paper's role; how they build on or diverge from each other; which gaps remain |
-| 4. 核心想法與方法 | What each paper changes, which difficulty it targets, why it should work; which knowledge points it maps to |
-| 5. 證據與改善幅度 | How each paper tests its claims, what the results support, whether conditions are comparable |
-| 6. 已解決與未解決 | What is supported by evidence, what improves only under specific conditions, what is still unsolved (a limitation the authors state, or a gap later work addressed; not the reader's open questions) |
-| 7. 因此我們做了什麼 | Optional, only when the user supplies their own work (results, code, data): which remaining failure it starts from, what was done, and what it achieved, each claim with its source (the user's file or report, or 本次實際重現 when rerun here). Never written from a guess about the user's research |
-| 重點整理 | After the knowledge points, 3 sentences: the core problem, the improvement the evidence supports (with its scale), the problem still unsolved |
+| 4 行重點 | 問題、作者的做法、結果（with its scale）、限制; one sentence each |
+| 1. 問題 | One concrete failure (what was expected, what happened, the effect) and an everyday example of why it is hard |
+| 2. 傳統作法與它的限制 | How the traditional approach works, where it falls short and the effect; it ends with 1 or 2 sentences on the cluster (how many papers were read, what they add) and a link to the cluster table |
+| 3. 作者的做法 | The paper's method end to end in words and its own figure, which difficulty each part targets, each part linked to its knowledge point |
+| 4. 怎麼判斷方法好不好 | The evaluation in plain words: what is measured, what number counts as good |
+| 5. 結果 | What the evidence supports and under which conditions; our recomputation in one small table, kept apart from the paper's numbers |
+| 6. 還沒解決的問題 | What improves only under specific conditions and what the authors state is unsolved (not the reader's open questions) |
+| 7. 因此我們做了什麼 | Optional, only when the user supplies their own work (results, code, data): which remaining failure it starts from, what was done, and what it achieved, each claim with its source. Never written from a guess about the user's research |
+
+The cluster's details (each paper's role, evidence and gap) live only in the cluster comparison table; the storyline does not list papers group by group.
 
 There is no section of open questions; see "What the page shows".
 
@@ -251,7 +259,8 @@ Never write to an Obsidian vault unless the user explicitly asks. The output fol
   widgets.js            the plugin's shared widgets, copied unchanged
   katex/                formula typesetting (KaTeX, MIT), copied unchanged; works offline
   demos.js              the computation of each knowledge point's demo
-  papers/<short>.md     one note per paper
+  papers/<short>.md     one note per paper (the source)
+  papers/<short>.html   the same note as a page, written by build_notes.py; index.html links here
   data/                 real samples and their sources; created only when the user approved a download
   studio/               the labs of paper-reading:presentation, when stage 0 approved them
   _work/                by-products; deleting it breaks none of the above
@@ -265,11 +274,13 @@ Never write to an Obsidian vault unless the user explicitly asks. The output fol
 
 **When done, open the result for the user; do not leave it for them to open.**
 
-1. Start `python <topic>/serve.py` in the background: it serves the folder at `http://127.0.0.1:<port>/index.html` (standard library only, a free port from 8000) and opens it in the user's default browser. The reply gives the address, the port, how to stop it and the command that starts it again. If it cannot start, open `index.html` directly (Windows: `Start-Process "<path>\index.html"`; macOS: `open`; Linux: `xdg-open`); the page also works as a file.
+1. Start `python <topic>/serve.py` in the background: it serves the folder at `http://127.0.0.1:<port>/index.html` (standard library only, a free port from 8000) and opens it in the user's default browser. The reply gives the address, the port, how to stop it and the command that starts it again. **In a remote session** (`SSH_CONNECTION` is set, or the user works through VS Code Remote) the user's browser cannot open this machine's 127.0.0.1, so do not hand over that address alone: when `tailscale ip -4` gives an address, start with `--host <that address>` (reachable only from the user's own Tailscale devices) and give `http://<address>:<port>/index.html`; otherwise give the one-line `ssh -L <port>:127.0.0.1:<port> …` forwarding. `serve.py` prints this hint itself. Opening the service to a whole network is asked first, like any port. If it cannot start, open `index.html` directly (Windows: `Start-Process "<path>\index.html"`; macOS: `open`; Linux: `xdg-open`); the page also works as a file.
 2. Start the final reply with clickable markdown links: `index.html`, then the note on the user's paper. Do not give plain-text paths only. Then give the 報告要求對照 table (requirement, where on the page, 符合 / 不符合), so the user can see what was delivered against each requirement without searching the page.
 3. If the browser cannot be opened (for example a remote session without a desktop), say why, and still give the links.
 
 Before writing a paper note, check by full title or DOI/arXiv id whether it already exists; if it does, update it and keep any comments the user wrote.
+
+**Notes open as pages.** A browser shows a `.md` file as raw text, so after the notes are written (and after any later edit) run `python <plugin>/scripts/build_notes.py <topic>`; it writes `papers/<short>.html` next to each note, and the page links to the `.html`. The `.md` stays the source.
 
 ## Work only inside the output folder
 

@@ -169,7 +169,8 @@
       r.forEach(c => tr.append(el(i ? 'td' : 'th', { text: PR.fmt(c) })));
       t.append(tr);
     });
-    return t;
+    // a wide result table scrolls inside its own box instead of widening the page
+    return el('div', { class: 'tscroll' }, t);
   }
 
   // ---------- Formulas typeset with KaTeX (katex/ next to the page; falls back to the source text) ----------
@@ -289,6 +290,9 @@
 #pr-top{position:fixed;right:22px;bottom:22px;width:40px;height:40px;border-radius:50%;border:1px solid #334155;background:#111820;color:#67e8f9;font-size:18px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
 #pr-top.show{opacity:1;pointer-events:auto}
 #pr-top:hover{border-color:#67e8f9}
+#pr-back{position:fixed;right:72px;bottom:22px;height:40px;padding:0 14px;border-radius:20px;border:1px solid #155e75;background:#0e2530;color:#67e8f9;font:inherit;font-size:14px;cursor:pointer;display:none;z-index:50}
+#pr-back.show{display:block}
+#pr-back:hover{border-color:#67e8f9}
 #toc .toc-lab{margin:0 0 12px;padding:8px 10px;border:1px solid #155e75;border-radius:8px;background:#0e2530;color:#67e8f9;font-weight:700}
 #toc .toc-lab:hover{border-color:#67e8f9}
 #pr-lightbox{position:fixed;inset:0;z-index:100;background:rgba(3,7,12,.92);display:flex;flex-direction:column}
@@ -330,6 +334,7 @@ main .figure img{cursor:zoom-in}
 .controls select{background:#1e293b;color:#e2e8f0;border:1px solid #475569;border-radius:5px;padding:2px 6px;font:inherit}
 .controls input[type=checkbox]{accent-color:#67e8f9;width:16px;height:16px}
 .controls .val{display:inline-block;min-width:3.2em;padding:0 6px;border-radius:4px;background:#1e293b;color:#67e8f9;font:12px/1.8 ui-monospace,Consolas,monospace;text-align:center}
+.tscroll{overflow-x:auto;max-width:100%}
 .fmap{position:relative;overflow-x:auto;border:1px solid #334155;border-radius:10px;background:#0b1220;padding:8px}
 .fmap svg{display:block}
 .fmap .node{cursor:pointer}
@@ -490,6 +495,14 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
   // Reading progress bar at the top and a back-to-top button.
   function pageChrome() {
     if (document.getElementById('pr-progress')) return;
+    // on a narrow screen the table of contents folds into a bar at the top; this button opens it
+    const toc = document.getElementById('toc');
+    if (toc && !document.getElementById('toc-toggle')) {
+      const tg = el('button', { id: 'toc-toggle', type: 'button', text: '☰ 目錄' });
+      tg.addEventListener('click', () => toc.classList.toggle('open'));
+      toc.prepend(tg);
+      toc.addEventListener('click', ev => { if (ev.target.closest('a')) toc.classList.remove('open'); });
+    }
     const bar = el('div', { id: 'pr-progress' });
     const top = el('button', { id: 'pr-top', type: 'button', 'aria-label': '回到頂端', text: '↑' });
     top.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
@@ -503,13 +516,19 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
   }
 
   // ---------- Jumping to a section: land on it after everything has been drawn, and show where you landed ----------
+  // Every history entry keeps its own scroll position in history.state.y, so the browser's back button
+  // returns to the exact spot, also when coming back from a note page. Entries made by a jump carry jumped: true.
+  const saveY = () => { try { history.replaceState({ ...(history.state || {}), y: window.scrollY }, '', location.href); } catch (e) {} };
+  function showBack() { const b = document.getElementById('pr-back'); if (b) b.classList.toggle('show', !!(history.state && history.state.jumped)); }
   PR.jump = function (hash, smooth, push) {
     let t = null;
     try { t = document.querySelector(decodeURIComponent(hash)); } catch (e) { t = null; }
     if (!t) return false;
-    const y = t.getBoundingClientRect().top + window.scrollY - 14;
-    window.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' });
-    if (push) history.pushState(null, '', hash); else history.replaceState(null, '', hash);
+    const y = Math.max(0, t.getBoundingClientRect().top + window.scrollY - 14);
+    if (push) { saveY(); history.pushState({ y, jumped: true }, '', hash); }
+    else history.replaceState({ ...(history.state || {}), y }, '', hash);
+    window.scrollTo({ top: y, behavior: smooth ? 'smooth' : 'auto' });
+    showBack();
     t.classList.remove('pr-flash'); void t.offsetWidth; t.classList.add('pr-flash');
     setTimeout(() => t.classList.remove('pr-flash'), 2200);
     return true;
@@ -517,14 +536,31 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
   function wireLinks() {
     document.addEventListener('click', ev => {
       const a = ev.target.closest && ev.target.closest('a[href^="#"]');
-      if (!a || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
+      // middle click and modifier clicks keep the browser default (a new tab)
+      if (!a || ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
       const h = a.getAttribute('href');
       if (h.length > 1 && PR.jump(h, true, true)) ev.preventDefault();
     });
-    window.addEventListener('popstate', () => { if (location.hash) PR.jump(location.hash, false); });
-    // an address with #… lands after the demos, formulas and fonts have changed the page height
-    if (location.hash) {
-      const land = () => PR.jump(location.hash, false);
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    let saveTimer = 0;
+    window.addEventListener('scroll', () => { clearTimeout(saveTimer); saveTimer = setTimeout(saveY, 200); }, { passive: true });
+    window.addEventListener('pagehide', saveY);
+    window.addEventListener('popstate', ev => {
+      if (ev.state && typeof ev.state.y === 'number') window.scrollTo({ top: ev.state.y, behavior: 'auto' });
+      else if (location.hash) PR.jump(location.hash, false);
+      showBack();
+    });
+    const back = el('button', { id: 'pr-back', type: 'button', text: '↩ 回到剛才的位置' });
+    back.addEventListener('click', () => history.back());
+    document.body.append(back);
+    showBack();
+    // landing: a remembered position (back from another page, or a reload) wins over the #…; either way land
+    // again after the demos, formulas and fonts have changed the page height
+    const st = history.state;
+    const land = st && typeof st.y === 'number' ? () => window.scrollTo({ top: st.y, behavior: 'auto' })
+      : location.hash ? () => PR.jump(location.hash, false) : null;
+    if (land) {
+      land();
       window.addEventListener('load', () => { land(); setTimeout(land, 300); });
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(land, 50));
     }
@@ -593,7 +629,7 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
     }
     document.addEventListener('click', ev => {
       const img = ev.target.closest && ev.target.closest('main .figure img, main figure img');
-      if (!img || ev.ctrlKey || ev.metaKey) return;
+      if (!img || ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
       ev.preventDefault(); show(figs().indexOf(img));
     });
     window.addEventListener('resize', () => { if (box && box._fit) box._fit(); });

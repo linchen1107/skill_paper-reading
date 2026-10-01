@@ -26,6 +26,14 @@ read (_work/verify/cold_read.md) is missing, older than index.html or lists anyt
 section is marked data-traditional="1",
 a map entry has no section, or the text contains unconfirmed wording
 (尚未確認, 待驗證, 還沒確認), which belongs in the paper notes instead.
+It also reads index.html as text and fails the page when the storyline (from
+#story to the knowledge-point map) is longer than STORY_LIMIT characters, a
+storyline paragraph has more than 5 sentences, a sentence of the storyline or of
+a knowledge point is longer than SENTENCE_LIMIT, a knowledge-point field has more
+than 2 sentences, a source sits in brackets inside a sentence (it belongs in the
+step's <p class="src"> line or a <span class="cite">), or the page names
+something itself (本頁稱為, 我們稱 ...) instead of using the paper's or the
+standard term.
 The browser profile lives in _work/tmp/ and is deleted afterwards.
 """
 import html
@@ -39,6 +47,73 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+
+# Reading load. Web readers mostly scan (NN/g: 79% scan, 16% read word by word) and plain-language
+# guidance splits sentences over 25 English words and keeps paragraphs to 5 sentences (GOV.UK);
+# 40 is the Chinese equivalent used here (CJK characters, plus one per English word or number).
+STORY_LIMIT = 3000
+SENTENCE_LIMIT = 40
+PARAGRAPH_SENTENCES = 5
+FIELD_SENTENCES = 2
+INLINE_SOURCE = re.compile(r"[（(][^（）()]*(原論文報告|本次實際重現|Section|Table|Fig\.|p\.\s?\d|§)[^（）()]*[）)]")
+COINED = re.compile(r"本頁(?:稱|把它叫|把這[^，。]{0,6}叫|叫它)|我們(?:稱|把它叫)|以下(?:簡)?稱為|姑且稱|暫且稱")
+
+
+def _plain(fragment):
+    fragment = re.sub(r'<span class="cite">.*?</span>', "", fragment, flags=re.S)
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", "", fragment))).strip()
+
+
+def _units(sentence):
+    return len(re.findall(r"[\u3400-\u9fff]|[A-Za-z0-9][A-Za-z0-9.%+\-]*", sentence))
+
+
+def _sentences(text):
+    return [x.strip() for x in re.split(r"(?<=[。！？!?])", text) if _units(x) > 0]
+
+
+def text_problems(page_html):
+    """Reading-load checks on the page source; returns (problems, story_length)."""
+    src = re.sub(r"<!--.*?-->|<script.*?</script>|<style.*?</style>", "", page_html, flags=re.S)
+    problems = []
+    start = src.find('<section id="story"')
+    if start < 0:  # a page made before the storyline had its own id starts at its first section
+        start = src.find("<section", max(src.find("<main"), 0))
+    end = min([i for i in (src.find('<section id="map"'), src.find('<section id="kps"'),
+                           src.find('<section id="cluster"')) if i > start] or [len(src)])
+    story = src[start:end] if start >= 0 else ""
+    blocks = [(m.group(1), m.group(2) or "", m.group(3)) for m in
+              re.finditer(r"<(p|li)(\s[^>]*)?>(.*?)</\1>", story, re.S)]
+    prose = [(tag, _plain(body)) for tag, attrs, body in blocks
+             if not re.search(r'class="[^"]*\b(src|meta|note|sub)\b', attrs)]
+    story_len = sum(_units(t) for _, t in prose)
+    if story_len > STORY_LIMIT:
+        problems.append(f"導讀有 {story_len} 字，上限 {STORY_LIMIT}：同一件事只講一次，細節移到知識點")
+    long_s, long_p, inline = [], [], []
+    for tag, text in prose:
+        ss = _sentences(text)
+        if tag == "p" and len(ss) > PARAGRAPH_SENTENCES:
+            long_p.append(f"{len(ss)} 句：{text[:30]}…")
+        long_s += [x for x in ss if _units(x) > SENTENCE_LIMIT]
+        inline += INLINE_SOURCE.findall(text) and [text[:30]] or []
+    fields = [_plain(m.group(1)) for m in re.finditer(r"<dd>(.*?)</dd>", src[end:].split('<div id="appendix"')[0], re.S)]
+    long_f = [f"{len(_sentences(t))} 句：{t[:30]}…" for t in fields if len(_sentences(t)) > FIELD_SENTENCES]
+    for t in fields:
+        long_s += [x for x in _sentences(t) if _units(x) > SENTENCE_LIMIT]
+        if INLINE_SOURCE.search(t):
+            inline.append(t[:30])
+    if long_p:
+        problems.append(f"{len(long_p)} 段導讀超過 {PARAGRAPH_SENTENCES} 句：" + "；".join(long_p[:5]))
+    if long_s:
+        problems.append(f"{len(long_s)} 句超過 {SENTENCE_LIMIT} 字，拆成短句：" + "；".join(x[:24] + "…" for x in long_s[:8]))
+    if long_f:
+        problems.append(f"{len(long_f)} 個知識點欄位超過 {FIELD_SENTENCES} 句：" + "；".join(long_f[:5]))
+    if inline:
+        problems.append(f"{len(inline)} 處把出處寫在句子裡的括號中，改放到該段最後的 <p class=\"src\"> 或 <span class=\"cite\">：" + "；".join(x + "…" for x in inline[:5]))
+    coined = sorted(set(COINED.findall(_plain(src))))
+    if coined:
+        problems.append("頁面自己取了名字（" + "、".join(coined) + "）：改用論文的名詞或標準名詞，第一次出現時用一句白話解釋")
+    return problems, story_len
 
 
 def find_browser():
@@ -191,10 +266,13 @@ def main(topic_dir):
         problems.append("index.html 在最後一次冷讀測試之後又改過；請再做一輪冷讀測試")
     else:
         text = cold.read_text(encoding="utf-8")
-        part = text.split("## 看不懂的地方", 1)[-1].split("\n## ", 1)[0]
-        items = [ln for ln in part.splitlines() if ln.strip().startswith("- ")]
-        if items:
-            problems.append(f"冷讀測試還有 {len(items)} 處看不懂（{cold}）")
+        for head, what in (("## 看不懂的地方", "看不懂"), ("## 可以刪掉的地方", "可以刪掉")):
+            if head not in text:
+                continue
+            part = text.split(head, 1)[-1].split("\n## ", 1)[0]
+            items = [ln for ln in part.splitlines() if ln.strip().startswith("- ")]
+            if items:
+                problems.append(f"冷讀測試還有 {len(items)} 處{what}（{cold}）")
     print(f"名詞：{t.get('count', 0)} 個；冷讀文字 -> {work / 'verify' / 'reading_text.txt'}")
     figs = res.get("figures", [])
     for fg in figs:
@@ -205,6 +283,9 @@ def main(topic_dir):
         elif not fg.get("popup"):
             problems.append("點論文圖沒有開出彈窗: " + fg["src"])
     print(f"論文圖：{len(figs)} 張，真實圖檔 {sum(f['ok'] for f in figs)} 張")
+    tp, story_len = text_problems(page.read_text(encoding="utf-8"))
+    problems += tp
+    print(f"閱讀量：導讀 {story_len} 字（上限 {STORY_LIMIT}），句長上限 {SENTENCE_LIMIT} 字")
     for p in problems:
         bad += 1
         print("未通過：" + p)

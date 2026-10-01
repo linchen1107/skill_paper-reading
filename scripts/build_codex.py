@@ -196,7 +196,7 @@ def main() -> None:
         (folder / "SKILL.md").write_text(build(), encoding="utf-8")
 
     reading = TARGET / "paper-reading-reading"
-    for script in ("extract_figures.py", "fetch_papers.py", "check_page.py", "selftest.js", "serve.py"):
+    for script in ("extract_figures.py", "fetch_papers.py", "check_page.py", "selftest.js", "serve.py", "build_notes.py"):
         dest = reading / "scripts"
         dest.mkdir(exist_ok=True)
         shutil.copy2(ROOT / "scripts" / script, dest / script)

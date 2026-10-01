@@ -49,7 +49,7 @@ If this plan has not already been approved, write no files yet; prior user autho
 ## Check, then hand over
 
 1. Run `python <skill>/scripts/check_lab.py <topic>`. It starts the backend, lets the page run every lab with its defaults and with one changed setting, runs every `@check`, stops the backend and deletes its browser profile. Fix what fails and run it again.
-2. Start the backend for the user with `python <topic>/serve.py` (it starts `studio/server.py`, which serves the reading page and the labs at one address) and open the lab page in the user's default browser.
+2. Start the backend for the user with `python <topic>/serve.py` (it starts `studio/server.py`, which serves the reading page and the labs at one address) and open the lab page in the user's default browser. In a remote session (`SSH_CONNECTION` set, or VS Code Remote) hand over an address the user's browser can open: `--host <tailscale ip -4>` when there is one, otherwise the `ssh -L` forwarding line the backend prints; never 127.0.0.1 alone.
 3. Begin the reply with a clickable link to the lab page, then: the port, how to stop the backend, the command that starts it again, and per lab what was operated, what it was checked against, and 通過 / 未通過 / 未驗收.
 
 ## Usage budget

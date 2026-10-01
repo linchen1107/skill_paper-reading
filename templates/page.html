@@ -52,12 +52,21 @@
   .note { color: var(--muted); font-size: 13px; }
   .error { color: #f87171; }
   .figure { margin: 14px 0; max-width: 820px; }
-  .figure img { display: block; width: 100%; height: auto; background: #fff; border-radius: 6px; border: 1px solid var(--line); padding: 8px; }
+  /* a paper figure never fills more than about half a screen; click it to see it large */
+  .figure img { display: block; width: auto; max-width: 100%; max-height: 560px; height: auto; background: #fff; border-radius: 6px; border: 1px solid var(--line); padding: 8px; }
+  .fig-row .figure img { width: 100%; max-height: none; }
   .figure figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; }
   .fig-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; max-width: none; }
   .fig-row.two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
   .fig-row .figure { margin: 0; max-width: none; }
-  .summary p { margin: 6px 0; }
+  /* the 4-line takeaway at the top of the page */
+  .takeaway { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 10px 16px; max-width: 50em; }
+  .takeaway p { margin: 4px 0; }
+  /* sources sit in one grey line at the end of a step, never inside the sentences */
+  main > section > p.src { margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 13px; }
+  .cite { color: #64748b; font-size: .82em; margin-left: .3em; white-space: nowrap; }
+  .cite::before { content: '— '; }
+  #story ~ section[id^="s"] > h3 { font-size: 22px; margin-top: 44px; }
   /* reading width: about 45 Chinese characters per line */
   main > section > p, main > section > ul, main > section > ol, .kp dl, .sub { max-width: 50em; }
   main li { margin: 3px 0; }
@@ -80,8 +89,24 @@
   .table-wrap table { margin: 0; min-width: 900px; }
   .table-wrap th:first-child, .table-wrap td:first-child { position: sticky; left: 0; background: #111820; z-index: 1; }
   .table-wrap th { position: sticky; top: 0; background: #131b24; }
-  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } #toc { position: static; height: auto; border-right: 0; }
-                              main { padding: 20px 16px 80px; } .kp dl, .eq dl { grid-template-columns: 1fr; } }
+  /* narrow screens: the contents fold into a bar at the top, wide demos and tables scroll inside their box */
+  #toc-toggle { display: none; }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    #toc { position: sticky; top: 0; z-index: 40; height: auto; max-height: 46px; overflow: hidden; padding: 6px 12px;
+           border-right: 0; border-bottom: 1px solid var(--line); }
+    #toc.open { max-height: 75vh; overflow-y: auto; }
+    #toc:not(.open) > :not(#toc-toggle) { display: none; }
+    #toc-toggle { display: block; width: 100%; text-align: left; background: none; border: 0; color: var(--ink);
+                  font: 700 15px/34px inherit; padding: 0 4px; cursor: pointer; }
+    main { padding: 20px 16px 80px; } .kp { padding: 14px 12px; }
+    .kp dl, .eq dl { grid-template-columns: 1fr; }
+    h1 { font-size: 24px; } h2 { font-size: 22px; }
+    .demo { overflow-x: auto; padding: 8px; } .demo * { min-width: 0; }
+    .plot { max-width: 100%; } .plot canvas { max-width: 100%; height: auto !important; }
+    .controls label { flex-wrap: wrap; } .controls select { max-width: 100%; }
+    main table { display: block; overflow-x: auto; }
+  }
 </style>
 </head>
 <body>
@@ -94,25 +119,31 @@
 </header>
 
 <!-- 左側目錄由 widgets.js 依 data-toc 自動產生：data-toc="group" 是分組標題，data-toc="item" 是項目，data-tag 是編號 -->
-<!-- 讀者是聰明、但完全不懂這個領域的人。閱讀順序：導言 → 問題與失敗案例 → 傳統作法 → 論文群 → 論文想法 → 證據
-     → 知識點（先操作，再看核心公式）→ 重點整理 → 論文群比較 → 附錄（完整公式）。
-     故事線不放獨立公式。每個專有名詞列在 demos.js 的 PR.terms({...})，第一次出現時寫成 <dfn data-term="名詞">名詞</dfn>，
+<!-- 讀者是聰明、但完全不懂這個領域的人，而且多半只掃讀。閱讀順序：4 行重點 → 6 步導讀 → 知識點（先操作，再看核心公式）
+     → 論文群比較 → 附錄（完整公式）。同一件事只講一次：沒有另外的「重點整理」，導讀不重複知識點的內容。
+     字數：導讀（含 4 行重點）全部不超過 3,000 字；每步最多 3 段文字加 1 張圖或 1 個表；1 段最多 5 句；1 句最多 40 字。
+     出處不寫在句子裡：每步最後一行 <p class="src">，或句尾的 <span class="cite">p.4</span>。不自己取名字：用論文的名詞或標準名詞。
+     導讀不放獨立公式。每個專有名詞列在 demos.js 的 PR.terms({...})，第一次出現時寫成 <dfn data-term="名詞">名詞</dfn>，
      同一句話裡用白話解釋；之後出現時，滑鼠停上去會看到解釋。 -->
-
-<section id="story" data-toc="group" data-toc-open data-toc-name="故事線">
-  <p class="lede"><!-- 3 到 4 句，不用任何術語：這篇論文想解決什麼、為什麼重要、它的做法用一句生活化的話怎麼說 --></p>
+<section id="story" data-toc="group" data-toc-open data-toc-name="導讀">
+  <h2><span class="mark">○</span>導讀</h2>
+  <div class="lede takeaway">
+    <p><b>問題：</b><!-- 1 句，不用術語：要解決什麼、為什麼重要 --></p>
+    <p><b>作者的做法：</b><!-- 1 句生活化的說法 --></p>
+    <p><b>結果：</b><!-- 1 句，數字附上尺度，例如「0.5 等於亂猜」 --></p>
+    <p><b>限制：</b><!-- 1 句：證據只在什麼條件下成立，或作者承認還沒解決的事 --></p>
+  </div>
 </section>
-
-<!-- 故事線中的關鍵數字用 <div class="stats"><div class="stat"><b>0.84</b><span>說明（出處）</span></div>…</div>；論文名稱本身就是連到筆記的連結 -->
-<section id="s1" data-toc="item" data-tag="1"><h2>1. 生活中的例子與困難</h2><!-- 第一段是一個具體的失敗案例：原本希望得到什麼、實際發生什麼、造成什麼影響（出處）；接著用生活例子說明它為什麼難 --></section>
-<section id="s2" data-toc="item" data-tag="2"><h2>2. 傳統作法與它的限制</h2><!-- --></section>
-<section id="s3" data-toc="item" data-tag="3"><h2>3. 論文群與研究缺口</h2><!-- --></section>
-<section id="s4" data-toc="item" data-tag="4"><h2>4. 核心想法與方法</h2><!-- 用文字與原論文流程圖講完整條方法；每一步連到對應知識點 --></section>
-<section id="s5" data-toc="item" data-tag="5"><h2>5. 證據與改善幅度</h2><!-- --></section>
-<section id="s6" data-toc="item" data-tag="6"><h2>6. 已解決與未解決</h2><!-- --></section>
+<!-- 每一步的寫法：第 1 句就是這一步的結論；接著最多 2 段說明；1 張原論文圖、1 個 .stats 或 1 個小表；
+     最後一行 <p class="src">出處：論文 Table III（p.5）；我們重算：知識點 7</p>。 -->
+<section id="s1" data-toc="item" data-tag="1" data-toc-name="問題"><h3>1. 問題：<!-- 一句話標題 --></h3><!-- 一個具體的失敗案例（原本希望得到什麼、實際發生什麼、影響）＋一個生活例子，說明為什麼難 --></section>
+<section id="s2" data-toc="item" data-tag="2" data-toc-name="傳統作法"><h3>2. 傳統作法與它的限制</h3><!-- 傳統作法怎麼做、在哪裡失敗（數字＋出處）；最後 1 到 2 句帶到論文群：讀了幾篇、連到 #cluster --></section>
+<section id="s3" data-toc="item" data-tag="3" data-toc-name="作者的做法"><h3>3. 作者的做法</h3><!-- 用文字與原論文流程圖講完整條方法；每一步連到對應知識點 --></section>
+<section id="s4" data-toc="item" data-tag="4" data-toc-name="怎麼評估"><h3>4. 怎麼判斷方法好不好</h3><!-- 評估指標的白話意思、什麼數字算好；可放 1 個總覽示範 --></section>
+<section id="s5" data-toc="item" data-tag="5" data-toc-name="結果"><h3>5. 結果</h3><!-- 證據支持什麼、條件是否可比；我們重算的結果另成一個小表 --></section>
+<section id="s6" data-toc="item" data-tag="6" data-toc-name="還沒解決的問題"><h3>6. 還沒解決的問題</h3><!-- 作者承認的限制、只在特定條件成立的改善；不放讀者自己的疑問 --></section>
 <!-- 選用：只有使用者提供了自己的研究（結果、程式、資料）時才加，每個主張都附出處：
-<section id="s7" data-toc="item" data-tag="7"><h2>7. 因此我們做了什麼</h2>從哪個仍未解決的失敗出發、做了什麼、得到什麼</section> -->
-
+<section id="s7" data-toc="item" data-tag="7" data-toc-name="我們做了什麼"><h3>7. 因此我們做了什麼</h3>從哪個仍未解決的失敗出發、做了什麼、得到什麼</section> -->
 <section id="map" data-toc="group" data-toc-name="知識點地圖"><h2>知識點地圖</h2>
   <!-- 依組別列出每個知識點：編號、名稱、原論文位置，連到 #kp-<N>；核心公式所在的知識點標 <span class="badge mid">核心公式</span> -->
 </section>
@@ -123,9 +154,9 @@
        示範傳統作法的知識點加 data-traditional="1"，放在論文方法之前：
   <section class="kp" id="kp-1" data-kp="1" data-formula="1" data-toc="item" data-tag="1">
     <h3><span class="chip">1</span>名稱</h3>   傳統作法用 <span class="chip trad">T1</span>
-    <p class="src">原論文位置：Section …；相關論文：作者 年份</p>
+    <p class="src">原論文位置：Section …；相關論文：作者 年份</p>   出處只寫在這一行，欄位內文不再加括號出處
     <dl><dt>生活例子</dt><dd>…</dd><dt>困難</dt><dd>…</dd><dt>傳統作法</dt><dd>…</dd>
-        <dt>論文的方法</dt><dd>…</dd><dt>延伸</dt><dd>…</dd></dl>
+        <dt>論文的方法</dt><dd>…</dd><dt>延伸</dt><dd>…</dd></dl>   每一欄最多 2 句，第 1 句先講結論
     <div class="demo" id="demo-1"></div>   沒有可計算的內容時，改放原論文圖或小表，並寫出原因。論文圖一律用真實圖檔：
        <figure class="figure"><a href="figs/<short>-fig3-real.svg"><img src="figs/<short>-fig3-real.svg"></a><figcaption>原論文 Fig. 3（p.8）：…</figcaption></figure>
     核心公式卡（全頁 1 到 5 張），放在示範之後：先看過數字，再看一般式。白話裡的著色詞和公式裡同色的項一一對應：
@@ -136,10 +167,6 @@
       <details><summary>符號與出處</summary><dl><dt><span class="tex">a</span></dt><dd>…</dd></dl><p class="src">完整推導：<a href="#eq-2">附錄 (2)</a></p></details>
     </div>
   </section> -->
-</section>
-
-<section id="summary" class="summary" data-toc="group" data-toc-name="重點整理"><h2>重點整理</h2>
-  <!-- 讀完故事線與知識點後的總結，3 句：核心問題；證據支持的改善（數字附上尺度，例如 0.5 等於亂猜）；仍未解決的問題 -->
 </section>
 
 <section id="cluster" data-toc="group" data-toc-name="論文群比較"><h2>論文群比較</h2>
