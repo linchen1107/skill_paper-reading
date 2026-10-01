@@ -110,8 +110,11 @@
     const gloss = (window.PR && PR.glossary) || {};
     const dfns = [...mainEl.querySelectorAll('dfn[data-term]')];
     out.terms = { count: Object.keys(gloss).length, late: [], notExplained: [], dfnNotListed: [], unlisted: [] };
+    // a term inside a longer registered term (光譜 in 高光譜相機) is not a use of the shorter one
+    const masked = k => Object.keys(gloss).filter(l => l !== k && l.length > k.length && l.includes(k))
+      .reduce((t, l) => t.replace(new RegExp(PR.termRe(l).source, 'g' + PR.termRe(l).flags.replace('g', '')), x => '\u0000'.repeat(x.length)), full);
     Object.keys(gloss).forEach(k => {
-      const m = PR.termRe(k).exec(full);
+      const m = PR.termRe(k).exec(masked(k));
       if (!m) return;
       const d = dfns.find(x => x.dataset.term === k);
       if (!d) out.terms.notExplained.push(k);
@@ -123,7 +126,8 @@
     const words = new Set();
     story.forEach(sec => {
       const c = sec.cloneNode(true);
-      c.querySelectorAll('.katex, .tex, .tex-block, code, a').forEach(x => x.remove());
+      // only the prose the writer wrote: not demo output, source lines or links
+      c.querySelectorAll('.katex, .tex, .tex-block, code, a, .demo, .src, .cite').forEach(x => x.remove());
       const tw = document.createTreeWalker(c, NodeFilter.SHOW_TEXT);
       let txt = '';
       while (tw.nextNode()) txt += ' ' + tw.currentNode.data;
@@ -136,13 +140,15 @@
       });
     });
     out.terms.unlisted = [...words];
-    // the text a cold reader gets: headings and prose in reading order, without demos, appendix and check tables
+    // the text a cold reader gets: the teaching prose in reading order. Left out: demos, source lines, the
+    // knowledge-point map and the cluster table (reference material), the appendix and the check tables
     const blocks = [...mainEl.querySelectorAll('h1, h2, h3, p, li, dt, dd, figcaption, th, td, .stat, .keyeq .tex-block')]
-      .filter(b => !b.closest('.demo, #appendix, #checks') && !b.parentElement.closest('p, li, dd, td, th, figcaption'));
+      .filter(b => !b.closest('.demo, #appendix, #checks, #map, #cluster, .src') && !b.parentElement.closest('p, li, dd, td, th, figcaption'));
     // what a reader sees: an inline formula as its glyphs (not the LaTeX kept for screen readers), superscripts as ^
     const visibleText = b => {
       const c = b.cloneNode(true);
       c.querySelectorAll('.katex').forEach(k => { const h = k.querySelector('.katex-html'); k.replaceWith(h ? h.textContent : ''); });
+      c.querySelectorAll('.cite').forEach(x => x.remove());
       c.querySelectorAll('sup').forEach(x => x.replaceWith('^' + x.textContent));
       c.querySelectorAll('sub').forEach(x => x.replaceWith('_' + x.textContent));
       return c.textContent;

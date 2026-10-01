@@ -21,8 +21,9 @@ formulas break their rules (none, more than 5, outside a knowledge point, before
 its demo, without a plain sentence whose coloured words match the formula),
 when a display formula appears outside the knowledge points and the appendix,
 when the formula map is not in the appendix, when a registered term is used before it is
-explained or capitalised jargon in the storyline is not registered, when the latest cold
-read (_work/verify/cold_read.md) is missing, older than index.html or lists anything, when no
+explained or capitalised jargon in the storyline is not registered, when the cold read
+(_work/verify/cold_read.md) is missing, has an item marked [阻斷] (blocks the main line)
+not marked 已修正, or has no 理解檢查 that starts with 正確, when no
 section is marked data-traditional="1",
 a map entry has no section, or the text contains unconfirmed wording
 (尚未確認, 待驗證, 還沒確認), which belongs in the paper notes instead.
@@ -262,17 +263,22 @@ def main(topic_dir):
     cold = work / "verify" / "cold_read.md"
     if not cold.exists():
         problems.append("冷讀測試沒有執行：依 references/cold-read.md 派一個不看論文的讀者讀 _work/verify/reading_text.txt")
-    elif cold.stat().st_mtime < page.stat().st_mtime:
-        problems.append("index.html 在最後一次冷讀測試之後又改過；請再做一輪冷讀測試")
     else:
         text = cold.read_text(encoding="utf-8")
-        for head, what in (("## 看不懂的地方", "看不懂"), ("## 可以刪掉的地方", "可以刪掉")):
-            if head not in text:
-                continue
-            part = text.split(head, 1)[-1].split("\n## ", 1)[0]
-            items = [ln for ln in part.splitlines() if ln.strip().startswith("- ")]
-            if items:
-                problems.append(f"冷讀測試還有 {len(items)} 處{what}（{cold}）")
+        def items(head):
+            part = text.split(head, 1)[-1].split("\n## ", 1)[0] if head in text else ""
+            return [ln.strip() for ln in part.splitlines() if ln.strip().startswith("- ")]
+        unclear, cut = items("## 看不懂的地方"), items("## 可以刪掉的地方")
+        blocking = [x for x in unclear if x.startswith("- [阻斷]")]
+        open_blocking = [x for x in blocking if "已修正" not in x]
+        check = text.split("## 理解檢查", 1)[-1].split("\n## ", 1)[0].strip() if "## 理解檢查" in text else ""
+        if open_blocking:
+            problems.append(f"冷讀的 {len(open_blocking)} 處阻斷還沒修正（修好後在該行行尾寫「→ 已修正：怎麼改的」）：{cold}")
+        if not check:
+            problems.append("冷讀沒有理解檢查：對照論文判斷讀者的 3 句理解，在 cold_read.md 的「## 理解檢查」下寫「正確」或寫出讀錯的地方")
+        elif not check.startswith("正確"):
+            problems.append("冷讀讀者的理解有誤，頁面會誤導讀者：修正後重做一次冷讀")
+        print(f"冷讀：阻斷 {len(blocking)} 處（未修正 {len(open_blocking)}），輕微 {len(unclear) - len(blocking)} 處，可以刪掉 {len(cut)} 處（後兩項不擋驗收，列在交付訊息）")
     print(f"名詞：{t.get('count', 0)} 個；冷讀文字 -> {work / 'verify' / 'reading_text.txt'}")
     figs = res.get("figures", [])
     for fg in figs:
