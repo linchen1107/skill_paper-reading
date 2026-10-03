@@ -29,7 +29,7 @@ Every part must link to the others: **difficulty → why the traditional approac
 
 All user-facing output of this skill (the page, notes, and chat replies) is written in **Traditional Chinese as used in Taiwan**. Technical terms stay in English when that is clearer (for example AUC, PCA, token).
 
-- Write complete sentences with a clear subject and verb. Lead with the conclusion, then the reason.
+- Write complete sentences with a clear subject and concrete verb. Give each sentence one main point; separate definitions, reasons, comparison conditions and sources while preserving causal links. Avoid nested brackets. Lead with the conclusion, then the reason.
 - Explain a technical term in one plain sentence the first time it appears (see "Who reads the page").
 - Use Taiwanese terminology, not Mainland terms: 影片 not 視頻, 資料 not 數據 (for data), 品質 not 質量, 資訊 not 信息, 預設 not 默認, 程式碼 not 代碼, 模組 not 模塊, 網路 not 網絡, 支援 not 支持 (for software support), 檔案 not 文件 (for files).
 - **Cite papers by author and year** (for example Wang et al. 2017), linked to their note. Short ids such as `wang17` are file names only and never appear in the text.
@@ -37,6 +37,9 @@ All user-facing output of this skill (the page, notes, and chat replies) is writ
 - **Sources stay out of the sentences.** Each storyline step ends with one grey line, `<p class="src">論文：Table III（p.5）；我們重算：知識點 7</p>`; a knowledge point keeps its sources in its `.src` line under the title; when one number needs its own location, a small `<span class="cite">p.5</span>` after the sentence. Brackets such as 「（原論文報告，Section III.A，p.3）」 inside a sentence fail `check_page.py`.
 - No filler, slogans, invented abbreviations or compressed coined phrases. Say what happened, its effect, and the evidence.
 - Use Arabic numerals.
+- Use the same name for the same concept in prose, captions, tables and controls. A control label identifies what the reader changes; a result states what changed and why, rather than relying on adjectives or unfamiliar shorthand.
+- Keep a conclusion's comparison conditions and scope. Without matching evidence, do not turn one test into a claim of universal effectiveness, complete failure, priority of invention or readiness for practical deployment.
+- When editing wording, preserve numbers, formulas, symbols, units and citations. Check a mismatch against its source before correcting the claim; fluent wording cannot supply missing evidence.
 
 ## Workflow
 
@@ -55,7 +58,7 @@ Complete the following 6 stages in order. **Do not start stage 1 until the user 
 
 ## Report requirements
 
-These come from the lab's review of how a paper must be reported (see [references/sources.md](references/sources.md)). They define what the user needs. Every run meets all of them, and the page ends with a 報告要求對照 table: one row per requirement, a link to where the page meets it, and 符合 or 不符合. The final reply repeats that table. A requirement that is not met is reported as 不符合, never glossed over.
+These come from the lab's review of how a paper must be reported (see [references/sources.md](references/sources.md)). Check every applicable requirement and record where it is met or why it remains unmet in `_work/verify/`. Do not gloss over an unmet requirement. Follow [What the page shows](#what-the-page-shows) when deciding which results belong in the teaching page.
 
 | # | Requirement (review point) | Met when |
 |---|---|---|
@@ -75,6 +78,8 @@ These come from the lab's review of how a paper must be reported (see [reference
 ## What the page shows
 
 The page teaches the paper; it is not an audit of it and not a list of open questions.
+
+- **Teaching results and internal checks have different purposes.** The page keeps the experimental results, sources, conditions and limitations needed to understand the paper. Acceptance results, requirement mapping, test rounds and work logs stay in `_work/verify/`; include them in the teaching page only when the user asks.
 
 - **Confirmed content only.** On `index.html` every statement is either reported by a paper or computed in this run, and the step's source line says which (論文：… with location; 我們重算：… with the knowledge point). The labels 原論文報告 and 本次實際重現 are for the notes and the check tables, not for the prose. The label 待驗證的推論 and the words 尚未確認, 待驗證 and 還沒確認 do not appear on the page; `check_page.py` fails the page if they do.
 - **Check what can be checked, during the run.** When a question can be settled by reading the paper again, its arXiv or supplementary version, the official code, a cited paper, or by recomputing, settle it and write the answer. Do not hand it to the reader.
@@ -212,7 +217,7 @@ All knowledge points live on one page and share one widget library. The page, th
 
 **Where the computation runs.** In the browser. Computation that needs Python packages, a model or large data belongs to the labs of paper-reading:presentation (stage 0, item 5), not to this page.
 
-**Acceptance.** Run `python <plugin>/scripts/check_page.py <topic>`. It opens the page in the Chrome, Edge or Chromium already on the machine, moves every control of every demo and confirms the output changes, steps through every formula animation, runs every `PR.check`, opens every figure, and prints one line per knowledge point (通過 / 未通過 / 無示範). The page as a whole fails when the formula layer is incomplete (no formula map, a box linking nowhere, a formula section missing from the map, an empty symbol table, a formula KaTeX could not typeset), when the key formulas break their rules (none, more than 5, before their demo, without a plain sentence whose coloured words match the formula), when a display formula appears in the storyline, when the formula map is not in the 附錄, when a listed term is used before it is explained or capitalised jargon in the storyline is not listed, when the cold read is missing, has a blocking item not marked fixed, or lacks the writer's 理解檢查 that the reader understood correctly, when a figure is a screenshot or does not open, when no knowledge point runs a traditional approach, when a map entry has no section, when unconfirmed wording appears, or when the reading load is over its limits (storyline over 3,000 characters, a paragraph over 5 sentences, a sentence over 40 characters, a knowledge-point field over 2 sentences, a source inside a sentence, a name the page made up). It also writes `_work/verify/reading_text.txt` for the cold read: run it as [references/cold-read.md](references/cold-read.md) describes, check the reader's 3-sentence understanding against the paper, fix and mark every [阻斷] item, fix the others when one sentence does it; run it again only when the understanding was wrong or the storyline was rewritten (at most 3 rounds, then report what remains). Fix what fails and run it again. Copy its lines into the 驗收結果 table, then fill the 報告要求對照 table. No screenshots.
+**Acceptance.** Run `python <plugin>/scripts/check_page.py <topic>`. It opens the page in the Chrome, Edge or Chromium already on the machine, moves every control of every demo and confirms the output changes, steps through every formula animation, runs every `PR.check`, opens every figure, and prints one line per knowledge point (通過 / 未通過 / 無示範). The page as a whole fails when the formula layer is incomplete (no formula map, a box linking nowhere, a formula section missing from the map, an empty symbol table, a formula KaTeX could not typeset), when the key formulas break their rules (none, more than 5, before their demo, without a plain sentence whose coloured words match the formula), when a display formula appears in the storyline, when the formula map is not in the 附錄, when a listed term is used before it is explained or capitalised jargon in the storyline is not listed, when the cold read is missing, has a blocking item not marked fixed, or lacks the writer's 理解檢查 that the reader understood correctly, when a figure is a screenshot or does not open, when no knowledge point runs a traditional approach, when a map entry has no section, when unconfirmed wording appears, or when the reading load is over its limits (storyline over 3,000 characters, a paragraph over 5 sentences, a sentence over 40 characters, a knowledge-point field over 2 sentences, a source inside a sentence, a name the page made up). It also writes `_work/verify/reading_text.txt` for the cold read: run it as [references/cold-read.md](references/cold-read.md) describes, check the reader's 3-sentence understanding against the paper, fix and mark every [阻斷] item, fix the others when one sentence does it; run it again only when the understanding was wrong or the storyline was rewritten (at most 3 rounds, then report what remains). Fix what fails and run it again. Keep its item-by-item outputs and the requirement mapping in `_work/verify/`, following "What the page shows". No screenshots.
 
 ## Stage 5: report storyline
 
@@ -239,14 +244,14 @@ There is no section of open questions; see "What the page shows".
 
 ## What the user sees at acceptance
 
-`index.html` is the acceptance page. From it the user must be able to see, without opening other files:
+`index.html` is the teaching page. From it the user must be able to see:
 
 1. **Paper-cluster comparison**: one row per paper with its role, the difficulty it addresses, its core design, its evidence (with source location), what it leaves unsolved, and how much was read (已讀全文 / 已讀相關段落 / 部分閱讀 / 待讀).
 2. **Formulas**: the key formulas inside their knowledge points, and in the 附錄 the formula map, the symbol table and every formula typeset with its location.
 3. **Complete knowledge-point map**: every point, grouped and numbered, with its source location and a link to its section.
 4. **Interactive material**: each knowledge-point section with its demo.
-5. **Item-by-item check results**: one row per knowledge point with the controls that were operated, whether its formula animation steps, the hand calculation or reference it was checked against, the result (通過 / 未通過 / 未驗收), and any limitation. Totals alone ("279 controls passed") are not enough; each point must be traceable to its own row.
-6. **Report requirements**: the 報告要求對照 table from "Report requirements", one row per requirement with a link to where the page meets it.
+
+Keep item-by-item control, formula and reference checks traceable in `_work/verify/`, including their result and limitations. Record requirement mapping there too; placement follows [What the page shows](#what-the-page-shows).
 
 ## Output location
 
@@ -275,7 +280,7 @@ Never write to an Obsidian vault unless the user explicitly asks. The output fol
 **When done, open the result for the user; do not leave it for them to open.**
 
 1. Start `python <topic>/serve.py` in the background: it serves the folder at `http://127.0.0.1:<port>/index.html` (standard library only, a free port from 8000) and opens it in the user's default browser. The reply gives the address, the port, how to stop it and the command that starts it again. **In a remote session** (`SSH_CONNECTION` is set, or the user works through VS Code Remote) the user's browser cannot open this machine's 127.0.0.1, so do not hand over that address alone: when `tailscale ip -4` gives an address, start with `--host <that address>` (reachable only from the user's own Tailscale devices) and give `http://<address>:<port>/index.html`; otherwise give the one-line `ssh -L <port>:127.0.0.1:<port> …` forwarding. `serve.py` prints this hint itself. Opening the service to a whole network is asked first, like any port. If it cannot start, open `index.html` directly (Windows: `Start-Process "<path>\index.html"`; macOS: `open`; Linux: `xdg-open`); the page also works as a file.
-2. Start the final reply with clickable markdown links: `index.html`, then the note on the user's paper. Do not give plain-text paths only. Then give the 報告要求對照 table (requirement, where on the page, 符合 / 不符合), so the user can see what was delivered against each requirement without searching the page.
+2. Start the final reply with clickable markdown links: `index.html`, then the note on the user's paper. Give the confirmed outcome and any unfinished items briefly. Keep the detailed requirement mapping in `_work/verify/`; link or reproduce it only when the user requests it.
 3. If the browser cannot be opened (for example a remote session without a desktop), say why, and still give the links.
 
 Before writing a paper note, check by full title or DOI/arXiv id whether it already exists; if it does, update it and keep any comments the user wrote.

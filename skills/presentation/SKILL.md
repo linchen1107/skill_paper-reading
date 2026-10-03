@@ -14,6 +14,8 @@ Keep it small: one Python file, one lab page, 2 to 5 labs, no frontend framework
 
 The lab page is in Traditional Chinese as used in Taiwan, like the reading page, so one report uses one language: lab titles, questions, control labels, summaries and notes; technical terms stay in English when that is clearer. Short declarative sentences: a number and its source instead of an adjective, no marketing words. Code and comments are in English. Replies to the user in chat are in Traditional Chinese (Taiwan).
 
+Follow the wording rules in [reading](../reading/SKILL.md#output-language-and-wording), including consistent terminology across controls and results, comparison conditions, and preservation of numbers, formulas and citations during editing.
+
 ## Input
 
 The output folder of paper-reading:reading for the same topic (`index.html`, `widgets.js`, `katex/`, `papers/`). If it does not exist, tell the user and offer to run paper-reading:reading first. When reading's stage 0 already listed the labs and the user approved them, that approval is this skill's Step 0.
