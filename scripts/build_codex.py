@@ -154,6 +154,8 @@ def build_presentation() -> str:
     name = "presentation"
     body = source_body(name)
     body = body.replace("paper-reading:reading", "$paper-reading-reading")
+    body = body.replace("../reading/SKILL.md#output-language-and-wording",
+                        "../paper-reading-reading/SKILL.md#output-language-and-wording")
     body = replace_required(
         body,
         "Write no files yet.",

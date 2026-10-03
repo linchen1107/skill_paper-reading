@@ -162,3 +162,8 @@ Not adopted: secondary paper-explainer series (they cannot replace the papers); 
 ## Rules added by the author of the skill
 
 Not from a post, the reviewer or the user, but added to carry out the requirements above: disclosing the reading scope and how much was read; checking comparison conditions; splitting reading across subagents; asking before downloads and installs; the output folder layout; computing units in the browser by default; the unit acceptance procedure; demo-data results are not the paper's results.
+# Wording corrections from the user, 2026-10-03
+
+The user asked to improve wording and sentence structure, then to update the local and GitHub skills, with wording as the main focus. The reusable requirements are complete sentences with concrete verbs, one main point per sentence, consistent names across prose and controls, and conclusions that keep their comparison conditions and evidence scope. Copyediting preserves numbers, formulas, units and citations.
+
+The user also identified the acceptance-results and report-requirements tables as internal process records that do not belong in the teaching page. Keep those checks traceable in the working records; the page still needs the experimental results, sources, conditions and limitations that help the reader interpret the paper.
