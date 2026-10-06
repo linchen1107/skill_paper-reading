@@ -69,4 +69,6 @@ To update a personal install, run `git -C "$HOME/skill_paper-reading" pull --ff-
 
 Give `reading` a PDF, arXiv link, or paper title. Its interactive examples do not reproduce the paper on real data; use `presentation` when you need real data and a runnable backend.
 
+Pages use a warm light theme by default (`scripts/warm_theme.py`). When you will present the paper, ask `reading` for a talk page: `talk.html` runs top to bottom from the basics to the critique, with live formula cards. It can also publish the pages to GitHub Pages with QR codes in the header.
+
 Check a reading page with `python .agents/skills/paper-reading-reading/scripts/check_page.py <topic>`. After changing a Claude skill or shared tool, regenerate the Codex skills with `python scripts/build_codex.py`.

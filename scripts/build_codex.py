@@ -196,7 +196,7 @@ def main() -> None:
         (folder / "SKILL.md").write_text(build(), encoding="utf-8")
 
     reading = TARGET / "paper-reading-reading"
-    for script in ("extract_figures.py", "fetch_papers.py", "check_page.py", "selftest.js", "serve.py", "build_notes.py"):
+    for script in ("extract_figures.py", "fetch_papers.py", "check_page.py", "selftest.js", "serve.py", "build_notes.py", "warm_theme.py"):
         dest = reading / "scripts"
         dest.mkdir(exist_ok=True)
         shutil.copy2(ROOT / "scripts" / script, dest / script)
@@ -214,7 +214,7 @@ def main() -> None:
     (presentation / "scripts").mkdir(exist_ok=True)
     for script in ("check_lab.py", "check_page.py", "serve.py"):
         shutil.copy2(ROOT / "scripts" / script, presentation / "scripts" / script)
-    shutil.copytree(ROOT / "templates" / "studio", presentation / "templates" / "studio", dirs_exist_ok=True)
+    shutil.copytree(ROOT / "templates" / "studio", presentation / "templates" / "studio", dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__"))
 
     annotate_scripts = TARGET / "paper-reading-annotate" / "scripts"
     annotate_scripts.mkdir(exist_ok=True)

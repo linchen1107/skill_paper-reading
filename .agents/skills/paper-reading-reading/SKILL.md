@@ -78,7 +78,7 @@ The page teaches the paper; it is not an audit of it and not a list of open ques
 - **Confirmed content only.** On `index.html` every statement is either reported by a paper or computed in this run, and the step's source line says which (論文：… with location; 我們重算：… with the knowledge point). The labels 原論文報告 and 本次實際重現 are for the notes and the check tables, not for the prose. The label 待驗證的推論 and the words 尚未確認, 待驗證 and 還沒確認 do not appear on the page; `check_page.py` fails the page if they do.
 - **Check what can be checked, during the run.** When a question can be settled by reading the paper again, its arXiv or supplementary version, the official code, a cited paper, or by recomputing, settle it and write the answer. Do not hand it to the reader.
 - **What cannot be settled goes into the notes.** Open questions, suspected typos and interpretations stay in `papers/<short>.md` under 我的判讀, with their label. They do not appear on the page.
-- **Errors in the paper, when confirmed**, appear on the page only where a reader needs them to understand a result correctly, inside that knowledge point or evidence paragraph, stated as a fact with its location (for example a table value outside the metric's definition). There is no separate list of the paper's errors on the page.
+- **Errors in the paper, when confirmed**, appear on the page only where a reader needs them to understand a result correctly, inside that knowledge point or evidence paragraph, stated as a fact with its location (for example a table value outside the metric's definition). There is no separate list of the paper's errors on `index.html`; the talk page may have one when the user asks (see "After stage 5: the talk page").
 
 ## Usage budget
 
@@ -183,6 +183,7 @@ All knowledge points live on one page and share one widget library. The page, th
 - Copy `<skill>/templates/widgets.js` to `<topic>/widgets.js`, the folder `<skill>/templates/katex/` to `<topic>/katex/` and `<skill>/scripts/serve.py` to `<topic>/serve.py`, unchanged. The widgets provide controls, plots, formula typesetting and animation, the formula map, the sidebar, figure popups and hand-calculation checks; the header of `widgets.js` shows how to use them.
 - Write only `<topic>/demos.js`: one `PR.demo(...)` per knowledge point that can be computed, and at least one `PR.check(...)` per demo that compares a setting with a hand calculation. No knowledge point gets its own page or program.
 - `index.html`, `widgets.js` and `demos.js` are plain files (no modules, no `fetch`), so the page also works when double-clicked; small data is embedded in `demos.js`.
+- **Warm theme by default.** When the page is filled in, run `python <skill>/scripts/warm_theme.py <topic>`: cream paper and serif headings for reading, and every demo canvas, formula map and key formula card on a dark espresso "screen" so light labels and data colours keep their contrast. It is safe to run again. Skip it only when the user asks for the dark theme.
 
 **Page order.** The page reads from top to bottom as one argument: the conclusion, the problem, the traditional approach, the paper's idea and evidence, then each knowledge point, and last the full formulas for readers who want them. A reader who stops anywhere has understood everything above that point, and nothing is said twice.
 
@@ -254,6 +255,8 @@ Never write to an Obsidian vault unless the user explicitly asks. The output fol
 ```
 <workspace>/paper-reading/<topic>/
   index.html            the one page: storyline, paper-cluster comparison, every knowledge point with its demo, check results
+  talk.html             the talk page, when the user will present (built by a generator in _work/src/ from index.html)
+  talk-script.md        the speaker script; written once, then the user's own file
   serve.py              opens the page at a local web address (`python serve.py`); starts studio/server.py instead when presentation has added it
   widgets.js            the plugin's shared widgets, copied unchanged
   katex/                formula typesetting (KaTeX, MIT), copied unchanged; works offline
@@ -301,6 +304,28 @@ For material downloads, package installs, model weights, or a server start, chec
 ## After stage 5: labs with a real backend
 
 Labs on real dataset samples with a Python backend are built by **$paper-reading-presentation** from this skill's output folder. When stage 0 proposed labs and the user approved them, continue with that skill after stage 5 in the same run, and hand over the reading page and the labs together at one address (`python serve.py`). Otherwise it runs when the user asks.
+
+## After stage 5: the talk page
+
+When the user will present the paper (a group meeting, a class report), build `talk.html` next to `index.html`. `index.html` is for reading; a speaker cannot present from it, because its order jumps between the storyline and the knowledge points. Write it with a small generator in `_work/src/` that reads `index.html`, so a later edit of `index.html` reaches the talk page by running the generator again.
+
+- **One pass from top to bottom, never jumping back.** Order: overview cards (what the paper does: problem, before, this paper, result, weak spots, next steps); then the basics a newcomer needs (for an optics paper: light and spectrum, polarization, reflection); then the problem with one real failure; the method step by step; how results are judged; the results; then the critique. Each chapter opens with one lead sentence. Every knowledge point appears once, where the talk first needs it; material for questions goes after a "Backup material" divider at the end.
+- **Formulas are many and live.** Each formula the talk uses is a key formula card with one row of controls (sliders or buttons) and one line that shows the formula with the current numbers substituted and the result, recomputed on every change. Use real data where the page already has it (for example the detection rate at the chosen threshold on a real sample); toy numbers say so.
+- **Knowledge points from the paper cluster.** Concepts the cluster supplies and the paper assumes (for example the reflection model behind a lighting choice) get their own short demo, each with its source paper, and one grey line stating where the model does not hold.
+- **Critique, when the user asks for it.** A chapter with the paper's errors, each one confirmed, stated as a fact, with page and section, and a crop of the PDF text with the wrong phrase boxed in red (render with `annots=False`, crop whole lines plus one line of context; one PNG per item in `figs/`). Then future work: what the authors did next and where the field went, each with its source. These crops are evidence of the text and are the one exception to "never screenshots".
+- **The speaker script belongs to the user.** Write `talk-script.md` (and its page) once, only when it does not exist; a generator never overwrites it, because the user edits it. Separate the cues on their own lines: Show, Do, Say.
+- The talk page has its own label and number checks (below); `check_page.py` covers `index.html`.
+
+**Checking demos by hand, for both pages.** After building or changing a demo, operate every control at its defaults and its extremes and confirm by values: no label, value or legend overlaps another or leaves the drawing; nothing goes outside the page width; a number that looks like a bug on screen (for example 100% false alarms, or 0% found) is either fixed or explained in the result line with its cause in the data (for example an overexposed photo). Check the desktop width only; phone width is not a target unless the user asks.
+
+## Publishing to GitHub Pages
+
+Only when the user asks. Publishing is public, so first list what goes up and what stays out, and wait for approval.
+
+- **Copy, do not `git init` the topic folder.** Copy the pages, the `.js` files, `katex/`, `figs/` and `papers/` into `<topic>/_work/gh-pages/`, add an empty `.nojekyll` so the notes are served as they are, then `gh repo create <user>/<name> --public --source . --push` and enable Pages from `main` at `/` (`gh api -X POST repos/<user>/<name>/pages -f 'source[branch]=main' -f 'source[path]=/'`).
+- **Left out by default:** the paper's PDF, `_work/`, `serve.py`, and the speaker script; remove the link to the script from the published `talk.html` copy only. Ask before publishing the paper's figures and extracted data.
+- **QR codes in the header** of `index.html` and `talk.html`, top right, inside the header layout (a grid column, so the header grows with them and nothing overlaps): left, the site's address; right, the user's GitHub profile. Generate them as SVG with the `qrcode` package (installed into `_work/.venv/` with approval) into `figs/`, and decode each once (for example with OpenCV) to confirm the address.
+- **Verify the live site**, not the local copy: wait until the Pages build reports `built` for the pushed commit, open the address, and confirm the pages load without errors and every image and formula appears. An update repeats the copy, the script-link removal and the push.
 
 ## Other modes
 
