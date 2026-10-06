@@ -1,16 +1,16 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><!-- 論文短名 -->論文圖解</title>
+<title><!-- paper title --></title>
 <link rel="stylesheet" href="katex/katex.min.css">
 <style>
   :root { --bg: #0f1419; --panel: #151c24; --card: #111820; --ink: #e2e8f0; --muted: #94a3b8; --line: #2b3643;
-          --accent: #67e8f9; --gold: #fbbf24; --serif: "Noto Serif TC", "Source Han Serif TC", "Songti TC", "PMingLiU", serif; }
+          --accent: #67e8f9; --gold: #fbbf24; --serif: Georgia, "Noto Serif TC", "Source Han Serif TC", serif; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink);
-         font: 16px/1.8 "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif; }
+         font: 16px/1.8 system-ui, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
   a { color: var(--accent); }
   .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); }
   #toc { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 22px 12px 40px 16px;
@@ -59,15 +59,14 @@
   .fig-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; max-width: none; }
   .fig-row.two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
   .fig-row .figure { margin: 0; max-width: none; }
-  /* the 4-line takeaway at the top of the page */
+  /* a highlighted block of key sentences */
   .takeaway { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 10px 16px; max-width: 50em; }
   .takeaway p { margin: 4px 0; }
   /* sources sit in one grey line at the end of a step, never inside the sentences */
   main > section > p.src { margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 13px; }
   .cite { color: #64748b; font-size: .82em; margin-left: .3em; white-space: nowrap; }
   .cite::before { content: '— '; }
-  #story ~ section[id^="s"] > h3 { font-size: 22px; margin-top: 44px; }
-  /* reading width: about 45 Chinese characters per line */
+  /* reading width: about 75 characters per line */
   main > section > p, main > section > ul, main > section > ol, .kp dl, .sub { max-width: 50em; }
   main li { margin: 3px 0; }
   .chip.trad { border-color: var(--gold); color: var(--gold); }
@@ -89,6 +88,27 @@
   .table-wrap table { margin: 0; min-width: 900px; }
   .table-wrap th:first-child, .table-wrap td:first-child { position: sticky; left: 0; background: #111820; z-index: 1; }
   .table-wrap th { position: sticky; top: 0; background: #131b24; }
+  /* the six overview cards at the top; each one opens its chapter below */
+  .overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 28px; margin: 18px 0 8px; }
+  .ov-card { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: 16px 20px; }
+  .ov-kicker { display: block; color: var(--accent); font-weight: 700; font-size: 14px; letter-spacing: .02em; }
+  .ov-card h3 { margin: 4px 0 8px; font-size: 21px; line-height: 1.4; display: block; }
+  .ov-card p { margin: 6px 0; font-size: 15.5px; }
+  .ov-card .figure { margin: 8px 0; } .ov-card .figure img { max-height: 220px; }
+  .ov-more { font-size: 14px; }
+  /* chapters: one per card, the knowledge points of that card inside */
+  .chapter > h2 { display: flex; align-items: center; gap: 14px; margin-top: 88px; }
+  .step-no { flex: 0 0 auto; display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+             background: var(--accent); color: var(--bg); font: 700 19px/1 system-ui, sans-serif; }
+  .chapter-lead { font-size: 19px; line-height: 1.6; border-left: 4px solid var(--accent); padding: 6px 0 6px 16px; margin: 0 0 24px; max-width: 46em; }
+  .chapter > h3 { font-size: 21px; margin-top: 36px; }
+  /* a crop of the paper's text with the wrong phrase boxed in red: evidence for a confirmed error (Weak spots) */
+  .pdf-crop { margin: 10px 0 4px; } .pdf-crop img { display: block; width: 100%; max-width: 560px; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
+  .pdf-crop figcaption { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .crit { padding-left: 1.4em; } .crit li { margin: 0 0 14px; }
+  .backup-divider { margin: 120px 0 0; padding: 22px 26px; border: 2px dashed var(--line); border-radius: 10px; background: var(--panel); }
+  .backup-divider b { font: 700 22px/1.3 var(--serif); }
+  .backup-divider p { margin: 6px 0 0; color: var(--muted); }
   /* narrow screens: the contents fold into a bar at the top, wide demos and tables scroll inside their box */
   #toc-toggle { display: none; }
   @media (max-width: 860px) {
@@ -111,106 +131,146 @@
 </head>
 <body>
 <div class="layout">
-<nav id="toc" aria-label="目錄"></nav>
+<nav id="toc" aria-label="Contents"></nav>
 <main>
-<header>
-  <h1><!-- 使用者論文的標題 --></h1>
-  <p class="meta"><!-- 作者 年份，出處；閱讀紀錄連到 papers/<short>.md --></p>
+<header class="opening-header">
+  <h1><!-- the user's paper title, exactly as published --></h1>
+  <p class="meta"><!-- authors, year, venue; the reading log links to papers/<short>.html --></p>
 </header>
 
-<!-- 左側目錄由 widgets.js 依 data-toc 自動產生：data-toc="group" 是分組標題，data-toc="item" 是項目，data-tag 是編號 -->
-<!-- 讀者是聰明、但完全不懂這個領域的人，而且多半只掃讀。閱讀順序：4 行重點 → 6 步導讀 → 知識點（先操作，再看核心公式）
-     → 論文群比較 → 附錄（完整公式）。同一件事只講一次：沒有另外的「重點整理」，導讀不重複知識點的內容。
-     字數：導讀（含 4 行重點）全部不超過 3,000 字；每步最多 3 段文字加 1 張圖或 1 個表；1 段最多 5 句；1 句最多 40 字。
-     出處不寫在句子裡：每步最後一行 <p class="src">，或句尾的 <span class="cite">p.4</span>。不自己取名字：用論文的名詞或標準名詞。
-     導讀不放獨立公式。每個專有名詞列在 demos.js 的 PR.terms({...})，第一次出現時寫成 <dfn data-term="名詞">名詞</dfn>，
-     同一句話裡用白話解釋；之後出現時，滑鼠停上去會看到解釋。 -->
-<section id="story" data-toc="group" data-toc-open data-toc-name="導讀">
-  <h2><span class="mark">○</span>導讀</h2>
-  <div class="lede takeaway">
-    <p><b>問題：</b><!-- 1 句，不用術語：要解決什麼、為什麼重要 --></p>
-    <p><b>作者的做法：</b><!-- 1 句生活化的說法 --></p>
-    <p><b>結果：</b><!-- 1 句，數字附上尺度，例如「0.5 等於亂猜」 --></p>
-    <p><b>限制：</b><!-- 1 句：證據只在什麼條件下成立，或作者承認還沒解決的事 --></p>
+<!-- The sidebar is built by widgets.js from data-toc: data-toc="group" is a heading, data-toc="item" an entry,
+     data-tag its number.
+     Structure: six cards first; each card has one chapter below it, and that chapter holds the knowledge points
+     that explain the card. The page reads top to bottom with no jumping back: a speaker can present it as it is.
+     The reader is intelligent but new to the field and scans. Each thing is said once: a card states the point,
+     its chapter explains it, a knowledge point inside the chapter deepens one part of it.
+     Wording: the first sentence is the conclusion; a concrete example with real numbers before the general rule;
+     every term registered in PR.terms({...}) in demos.js and written <dfn data-term="term">term</dfn> where it
+     first appears, with a plain explanation in the same sentence; one name per thing; the paper's or the field's
+     terms, never a name the page makes up. Sources never inside a sentence: <p class="src"> at the end of a block,
+     or <span class="cite">p.4</span>. No display formula outside a knowledge point or the appendix. -->
+<section id="story" data-toc="group" data-toc-open data-tag="0" data-toc-name="What this paper does">
+  <div class="overview">
+    <!-- six cards, in this order; each: kicker, a one-sentence heading in everyday words, 1 to 3 short sentences,
+         at most one small figure or a 3-step flow, a source line, and a link to its chapter -->
+    <article class="ov-card"><span class="ov-kicker">Problem</span><h3><!-- the question, in everyday words --></h3>
+      <!-- one concrete failure: what was expected, what happened, its effect --><a class="ov-more" href="#ch-1">Chapter 1 →</a></article>
+    <article class="ov-card"><span class="ov-kicker">Before</span><h3><!-- how it was done before, one sentence --></h3>
+      <!-- the traditional approach and where it falls short --><a class="ov-more" href="#ch-2">Chapter 2 →</a></article>
+    <article class="ov-card"><span class="ov-kicker">This paper</span><h3><!-- the idea, one sentence --></h3>
+      <!-- the method in 3 steps, which difficulty each step targets --><a class="ov-more" href="#ch-3">Chapter 3 →</a></article>
+    <article class="ov-card"><span class="ov-kicker">Result</span><h3><!-- the main finding with its number and scale --></h3>
+      <!-- what is measured, the key numbers, under which conditions --><a class="ov-more" href="#ch-4">Chapter 4 →</a></article>
+    <article class="ov-card"><span class="ov-kicker">Weak spots</span><h3><!-- the most important weakness, one sentence --></h3>
+      <!-- 3 to 5 confirmed problems, each one line --><a class="ov-more" href="#ch-5">Chapter 5 →</a></article>
+    <article class="ov-card"><span class="ov-kicker">Next steps</span><h3><!-- where the work went next, one sentence --></h3>
+      <!-- the authors' follow-up and the field's direction, with sources --><a class="ov-more" href="#ch-6">Chapter 6 →</a></article>
   </div>
 </section>
-<!-- 每一步的寫法：第 1 句就是這一步的結論；接著最多 2 段說明；1 張原論文圖、1 個 .stats 或 1 個小表；
-     最後一行 <p class="src">出處：論文 Table III（p.5）；我們重算：知識點 7</p>。 -->
-<section id="s1" data-toc="item" data-tag="1" data-toc-name="問題"><h3>1. 問題：<!-- 一句話標題 --></h3><!-- 一個具體的失敗案例（原本希望得到什麼、實際發生什麼、影響）＋一個生活例子，說明為什麼難 --></section>
-<section id="s2" data-toc="item" data-tag="2" data-toc-name="傳統作法"><h3>2. 傳統作法與它的限制</h3><!-- 傳統作法怎麼做、在哪裡失敗（數字＋出處）；最後 1 到 2 句帶到論文群：讀了幾篇、連到 #cluster --></section>
-<section id="s3" data-toc="item" data-tag="3" data-toc-name="作者的做法"><h3>3. 作者的做法</h3><!-- 用文字與原論文流程圖講完整條方法；每一步連到對應知識點 --></section>
-<section id="s4" data-toc="item" data-tag="4" data-toc-name="怎麼評估"><h3>4. 怎麼判斷方法好不好</h3><!-- 評估指標的白話意思、什麼數字算好；可放 1 個總覽示範 --></section>
-<section id="s5" data-toc="item" data-tag="5" data-toc-name="結果"><h3>5. 結果</h3><!-- 證據支持什麼、條件是否可比；我們重算的結果另成一個小表 --></section>
-<section id="s6" data-toc="item" data-tag="6" data-toc-name="還沒解決的問題"><h3>6. 還沒解決的問題</h3><!-- 作者承認的限制、只在特定條件成立的改善；不放讀者自己的疑問 --></section>
-<!-- 選用：只有使用者提供了自己的研究（結果、程式、資料）時才加，每個主張都附出處：
-<section id="s7" data-toc="item" data-tag="7" data-toc-name="我們做了什麼"><h3>7. 因此我們做了什麼</h3>從哪個仍未解決的失敗出發、做了什麼、得到什麼</section> -->
-<section id="map" data-toc="group" data-toc-name="知識點地圖"><h2>知識點地圖</h2>
-  <!-- 依組別列出每個知識點：編號、名稱、原論文位置，連到 #kp-<N>；核心公式所在的知識點標 <span class="badge mid">核心公式</span> -->
-</section>
 
-<section id="kps" data-toc="group" data-toc-name="知識點與互動"><h2>知識點與互動</h2>
-  <!-- 每個知識點一個區塊，順序固定：生活例子、困難、傳統作法、論文的方法、延伸 → 示範（代入數字逐步算）→ 核心公式卡（只有核心公式才有）。
-       有公式的知識點加 data-formula="1"，它的示範必須回傳 anim（公式動畫）；
-       示範傳統作法的知識點加 data-traditional="1"，放在論文方法之前：
+<!-- Each chapter: an h2 with its number and the card's name, one lead sentence (the conclusion), at most 3 short
+     paragraphs with 1 paper figure or 1 table, a <p class="src"> line, then its knowledge points.
+     A knowledge point (one per idea, numbered in reading order across the page):
   <section class="kp" id="kp-1" data-kp="1" data-formula="1" data-toc="item" data-tag="1">
-    <h3><span class="chip">1</span>名稱</h3>   傳統作法用 <span class="chip trad">T1</span>
-    <p class="src">原論文位置：Section …；相關論文：作者 年份</p>   出處只寫在這一行，欄位內文不再加括號出處
-    <dl><dt>生活例子</dt><dd>…</dd><dt>困難</dt><dd>…</dd><dt>傳統作法</dt><dd>…</dd>
-        <dt>論文的方法</dt><dd>…</dd><dt>延伸</dt><dd>…</dd></dl>   每一欄最多 2 句，第 1 句先講結論
-    <div class="demo" id="demo-1"></div>   沒有可計算的內容時，改放原論文圖或小表，並寫出原因。論文圖一律用真實圖檔：
-       <figure class="figure"><a href="figs/<short>-fig3-real.svg"><img src="figs/<short>-fig3-real.svg"></a><figcaption>原論文 Fig. 3（p.8）：…</figcaption></figure>
-    核心公式卡（全頁 1 到 5 張），放在示範之後：先看過數字，再看一般式。白話裡的著色詞和公式裡同色的項一一對應：
-    <div class="keyeq">
-      <div class="keyeq-head"><b>核心公式 (2)</b><span>p.4 · §III-B　剛才示範的計算，寫成一般式</span></div>
-      <p class="plain">一句白話，例如：<span class="w-a">轉移機率</span>等於<span class="w-b">走到下一格的次數</span>除以<span class="w-c">離開這一格的總次數</span>。</p>
-      <div class="tex-block">\ca{P(a,b)} = \frac{\cb{\#(a \to b)}}{\cc{\#(a \to \cdot)}}</div>
-      <details><summary>符號與出處</summary><dl><dt><span class="tex">a</span></dt><dd>…</dd></dl><p class="src">完整推導：<a href="#eq-2">附錄 (2)</a></p></details>
-    </div>
+    <h3><span class="chip">1</span>Name</h3>                     a traditional approach: <span class="chip trad">T1</span> and data-traditional="1"
+    <p class="src">In the paper: Section …; related: Author Year</p>
+    <dl><dt>Example</dt><dd>…</dd><dt>Difficulty</dt><dd>…</dd><dt>Before</dt><dd>…</dd>
+        <dt>This paper</dt><dd>…</dd><dt>Further</dt><dd>…</dd></dl>   at most 2 sentences each, conclusion first
+    <div class="demo" id="demo-1"></div>                          computed by PR.demo('1', …) in demos.js
+    after the demo, a live formula card for every formula the point uses:
+    <div class="keyeq" data-live="name">
+      <div class="keyeq-head"><b>Eq. (2)</b><span>p.4 · Section III-B</span></div>
+      <p class="plain">One plain sentence: the <span class="w-a">detection rate</span> is the <span class="w-b">defect pixels found</span> over <span class="w-c">all defect pixels</span>.</p>
+      <div class="tex-block">\ca{P_D} = \frac{\cb{TP}}{\cc{P}}</div>
+      <details><summary>Symbols and source</summary><dl><dt><span class="tex">P</span></dt><dd>…</dd></dl><p class="src">Derivation: <a href="#eq-2">appendix (2)</a></p></details>
+    </div>                                                        PR.live('name', {controls, tex}) adds the sliders
   </section> -->
+<section id="ch-1" class="chapter" data-toc="group" data-tag="1" data-toc-name="Problem">
+  <h2><span class="step-no">1</span>Problem: <!-- the card's heading --></h2>
+  <p class="chapter-lead"><!-- one sentence: the conclusion of this chapter --></p>
+  <!-- first the basics a newcomer needs to follow the problem (from the paper group on background), then the
+       concrete failure with its source -->
+</section>
+<section id="ch-2" class="chapter" data-toc="group" data-tag="2" data-toc-name="Before">
+  <h2><span class="step-no">2</span>Before: <!-- the card's heading --></h2>
+  <p class="chapter-lead"><!-- … --></p>
+  <!-- the traditional approach, run on the same data as the paper's method (a knowledge point with data-traditional="1") -->
+</section>
+<section id="ch-3" class="chapter" data-toc="group" data-tag="3" data-toc-name="This paper">
+  <h2><span class="step-no">3</span>This paper: <!-- the card's heading --></h2>
+  <p class="chapter-lead"><!-- … --></p>
+  <!-- the method step by step with the paper's own figure; each step a knowledge point with its live formula cards -->
+</section>
+<section id="ch-4" class="chapter" data-toc="group" data-tag="4" data-toc-name="Result">
+  <h2><span class="step-no">4</span>Result: <!-- the card's heading --></h2>
+  <p class="chapter-lead"><!-- … --></p>
+  <!-- how results are judged (what is measured, what number is good), then the results; our recomputation kept apart
+       from the paper's numbers -->
+</section>
+<section id="ch-5" class="chapter" data-toc="group" data-tag="5" data-toc-name="Weak spots">
+  <h2><span class="step-no">5</span>Weak spots: <!-- the card's heading --></h2>
+  <p class="chapter-lead"><!-- … --></p>
+  <!-- confirmed problems only, each stated as a fact with its location and the paper's text as evidence:
+  <ol class="crit"><li><b>…</b> … <p class="src">p.5, Section V</p>
+    <figure class="pdf-crop"><img src="figs/crit-1.png" alt="…"><figcaption>p.5: the boxed phrase …</figcaption></figure></li></ol>
+       then the limits the authors state themselves -->
+</section>
+<section id="ch-6" class="chapter" data-toc="group" data-tag="6" data-toc-name="Next steps">
+  <h2><span class="step-no">6</span>Next steps: <!-- the card's heading --></h2>
+  <p class="chapter-lead"><!-- … --></p>
+  <!-- what the authors did next and where the field went, each with its source (from the paper group on follow-ups);
+       the user's own work only when the user supplied it -->
 </section>
 
-<section id="cluster" data-toc="group" data-toc-name="論文群比較"><h2>論文群比較</h2>
-  <div class="table-wrap"><table><tr><th>論文</th><th>角色</th><th>解決的困難</th><th>核心設計</th><th>證據（出處）</th><th>留下的問題</th><th>閱讀狀態</th></tr>
-  <!-- 一篇一列；論文寫作者與年份，連到 papers/<short>.md；閱讀狀態用 <span class="badge ok">已讀全文</span>、badge mid 已讀相關段落、badge low 部分閱讀或待讀 --></table></div>
+<div class="backup-divider" id="backup"><b>Backup material</b><p>Not part of the main line. Use these sections to answer questions.</p></div>
+
+<section id="map" data-toc="group" data-toc-name="Backup · Knowledge-point map"><h2>Knowledge-point map</h2>
+  <!-- grouped by chapter: number, name, location in the paper, link to #kp-<N> -->
+</section>
+
+<section id="cluster" data-toc="group" data-toc-name="Backup · Paper groups"><h2>Paper groups</h2>
+  <div class="table-wrap"><table><tr><th>Paper</th><th>Role</th><th>Difficulty addressed</th><th>Core design</th><th>Evidence (source)</th><th>Left open</th><th>Read</th></tr>
+  <!-- one group per chapter: a row <tr><th colspan="7">Group: … (supports chapter N)</th></tr>, then one row per paper,
+       its name (Author Year) linking to papers/<short>.html; Read as <span class="badge ok">full text</span>,
+       badge mid relevant sections, badge low partly read --></table></div>
 </section>
 
 <div id="appendix">
-<section id="overview" data-toc="group" data-toc-name="附錄：公式總覽"><h2><span class="mark">附錄</span>公式總覽</h2>
-  <p class="sub">給想深入的讀者：論文的每一條公式、它們怎麼接起來、每個符號的意思。正文只需要知識點裡的核心公式。</p>
-  <section id="map-formulas" data-toc="item" data-tag="地圖" data-toc-name="公式之間的關係">
-    <h3><span class="chip">地圖</span>公式之間的關係</h3>
-    <p class="sub">點方塊可跳到該式。</p>
+<section id="overview" data-toc="group" data-toc-name="Appendix: formulas"><h2><span class="mark">Appendix</span>Formula overview</h2>
+  <p class="sub">Every formula of the paper, how they connect, and what each symbol means.</p>
+  <section id="map-formulas" data-toc="item" data-tag="Map" data-toc-name="How the formulas connect">
+    <h3><span class="chip">Map</span>How the formulas connect</h3>
+    <p class="sub">Click a box to jump to its formula.</p>
     <div id="fmap"></div>
-    <!-- PR.formulaMap('fmap', {...}) 寫在 demos.js；caption 用一段話講完整條推導 -->
+    <!-- PR.formulaMap('fmap', {...}) in demos.js; caption: the derivation in one paragraph -->
   </section>
-  <section id="symbols" data-toc="item" data-tag="符號" data-toc-name="符號速查">
-    <h3><span class="chip">符號</span>符號速查</h3>
-    <table id="symbol-table"><tr><th>符號</th><th>意思</th><th>論文中的設定</th></tr>
-    <!-- 一個符號一列：<td><span class="tex">c \in \mathbb{R}^k</span></td><td>…</td><td>…（出處）</td> --></table>
+  <section id="symbols" data-toc="item" data-tag="Sym" data-toc-name="Symbols">
+    <h3><span class="chip">Sym</span>Symbols</h3>
+    <table id="symbol-table"><tr><th>Symbol</th><th>Meaning</th><th>Setting in the paper</th></tr>
+    <!-- one symbol per row: <td><span class="tex">x \in \mathbb{R}^L</span></td><td>…</td><td>… (source)</td> --></table>
   </section>
 </section>
 
-<!-- 公式逐條：依推導順序分組，每組一個 h2（名稱前加「附錄 · 」）；每個式子一個 section.eq-sec：
-<section id="grp-1" data-toc="group" data-toc-name="附錄 · 訓練目標"><h2><span class="mark">附錄</span>訓練目標：從 A 到 B</h2>
-  <p class="sub">正文 §2–§3，附錄 A–D。</p>
+<!-- Formulas one by one, grouped in the order of the derivation; one h2 per group ("Appendix · …"), one section.eq-sec per formula:
+<section id="grp-1" data-toc="group" data-toc-name="Appendix · Detectors"><h2><span class="mark">Appendix</span>Detectors</h2>
   <section class="eq-sec" id="eq-1" data-toc="item" data-tag="(1)">
-    <h3><span class="chip">(1)</span>名稱</h3>
+    <h3><span class="chip">(1)</span>Name</h3>
     <div class="eq">
-      <div class="tex-block">\min_G \max_D \ca{\mathcal{L}_{Adv}}(D,G) = …</div>
-      <div class="where">p.3 · §2 章節名</div>
-      <dl><dt><span class="tex">D(x)\in(0,1)</span></dt><dd>判別器認為 x 是真實影像的機率。</dd></dl>
-      <div class="links">由 <a href="#eq-…">(…)</a> 推來；推向 <a href="#eq-…">(…)</a>；互動計算：<a href="#kp-…">知識點 …</a></div>
+      <div class="tex-block">…</div>
+      <div class="where">p.3 · Section III</div>
+      <dl><dt><span class="tex">x</span></dt><dd>…</dd></dl>
+      <div class="links">From <a href="#eq-…">(…)</a>; leads to <a href="#eq-…">(…)</a>; computed in <a href="#kp-…">knowledge point …</a></div>
     </div>
   </section>
 </section> -->
 </div>
 
-<section id="checks" data-toc="group" data-toc-name="驗收結果"><h2>驗收結果</h2>
-  <table><tr><th>知識點</th><th>操作的控制項</th><th>公式動畫</th><th>對照的手算或參考</th><th>結果</th><th>限制</th></tr>
-  <!-- 依 check_page.py 的輸出，一個知識點一列；結果用 <span class="badge ok">通過</span>、badge bad 未通過、badge low 無示範 --></table>
-  <h3>報告要求對照</h3>
-  <table><tr><th>要求</th><th>在本頁的位置</th><th>結果</th></tr>
-  <!-- 一條要求一列，依 SKILL.md「Report requirements」表，連到頁面位置 --></table>
+<section id="checks" data-toc="group" data-toc-name="Backup · Checks"><h2>Checks</h2>
+  <table><tr><th>Knowledge point</th><th>Controls operated</th><th>Formula animation</th><th>Checked against</th><th>Result</th><th>Limits</th></tr>
+  <!-- one row per knowledge point from check_page.py; Result as <span class="badge ok">Pass</span>, badge bad Fail, badge low No demo --></table>
+  <h3>Report requirements</h3>
+  <table><tr><th>Requirement</th><th>Where on this page</th><th>Result</th></tr>
+  <!-- one row per requirement in SKILL.md "Report requirements", linking to where the page meets it --></table>
 </section>
 </main>
 </div>

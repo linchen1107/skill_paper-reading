@@ -5,6 +5,8 @@
 (function () {
   'use strict';
   const out = { errors: [], sections: [], checks: [], mapMissing: [] };
+  const EN = !/^zh/i.test(document.documentElement.lang || '');
+  out.lang = EN ? 'en' : 'zh';
   window.addEventListener('error', e => out.errors.push(String(e.message)));
 
   function snap(root) {
@@ -73,8 +75,8 @@
       texErrors: document.querySelectorAll('.katex-error').length,
       texFallback: document.querySelectorAll('.tex-fallback').length
     };
-    // key formulas: at most 5, inside a knowledge point, after its demo, with a plain sentence whose coloured
-    // words match coloured terms of the formula; the full formula layer lives in #appendix, the storyline has none
+    // key formulas: inside a knowledge point, after its demo, with a plain sentence whose coloured words match
+    // coloured terms of the formula, and live: moving each control changes the line with the numbers substituted
     out.keyFormulas = [...document.querySelectorAll('.keyeq')].map(c => {
       const kp = c.closest('section[data-kp]');
       const demo = kp && kp.querySelector('.demo');
@@ -88,12 +90,41 @@
         hover = PR.termsIn(c, cls(words[0])).some(n => n.classList.contains('pr-hl'));
         words[0].dispatchEvent(new MouseEvent('mouseleave'));
       }
-      return { kp: kp ? kp.dataset.kp : null, formulaKp: !!kp && kp.dataset.formula === '1',
+      const live = c.querySelector('.live'), lout = live && live.querySelector('.live-out');
+      let liveControls = 0, liveChanged = 0;
+      if (lout) {
+        live.querySelectorAll('input').forEach(inp => {
+          liveControls++;
+          const before = lout.innerText, orig = inp.value;
+          inp.value = String(inp.value) === String(inp.max) ? inp.min : inp.max; fire(inp);
+          if (lout.innerText !== before) liveChanged++;
+          inp.value = orig; fire(inp);
+        });
+        live.querySelectorAll('.live-seg').forEach(seg => {
+          const bs = [...seg.querySelectorAll('button')], cur = bs.find(b => b.getAttribute('aria-pressed') === 'true'), other = bs.find(b => b !== cur);
+          if (!other) return;
+          liveControls++;
+          const before = lout.innerText; other.click();
+          if (lout.innerText !== before) liveChanged++;
+          if (cur) cur.click();
+        });
+      }
+      return { kp: kp ? kp.dataset.kp : null, formulaKp: !!kp && kp.dataset.formula === '1', name: c.dataset.live || '',
+               live: !!lout, liveControls, liveChanged,
                plain: plain ? plain.innerText.trim().length : 0, words: words.length, unmatched, hover,
                afterDemo: !!demo && !!(demo.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING),
                typeset: !!c.querySelector('.tex-block .katex') };
     });
-    out.storyFormulas = [...document.querySelectorAll('.tex-block')].filter(n => !n.closest('#kps') && !n.closest('#appendix')).length;
+    out.storyFormulas = [...document.querySelectorAll('.tex-block')].filter(n => !n.closest('section[data-kp]') && !n.closest('#appendix')).length;
+    // structure: six cards in a fixed order at the top, each opening its chapter; every knowledge point inside a chapter
+    const cards = [...document.querySelectorAll('#story .ov-card')];
+    out.structure = {
+      cards: cards.map(c => { const k = c.querySelector('.ov-kicker'); return k ? k.textContent.trim() : ''; }),
+      cardLinks: cards.map(c => { const a = c.querySelector('a[href^="#ch-"]'); return a && document.querySelector(a.getAttribute('href')) ? a.getAttribute('href') : ''; }),
+      chapters: [...document.querySelectorAll('main section.chapter[id]')].map(ch => ({ id: ch.id, name: ch.dataset.tocName || '', kps: ch.querySelectorAll('section[data-kp]').length,
+        lead: !!(ch.querySelector('.chapter-lead') && ch.querySelector('.chapter-lead').innerText.trim()) })),
+      kpOutside: [...document.querySelectorAll('section[data-kp]')].filter(k => !k.closest('section.chapter')).map(k => k.dataset.kp)
+    };
     const fmap = document.querySelector('.fmap');
     out.overviewInAppendix = !fmap || !!fmap.closest('#appendix');
     // terms: each registered term is explained (<dfn data-term>) at or before its first use in reading order;
@@ -122,7 +153,7 @@
     });
     dfns.forEach(d => { if (!(d.dataset.term in gloss)) out.terms.dfnNotListed.push(d.dataset.term); });
     const known = Object.keys(gloss).map(k => k.toLowerCase());
-    const story = [...document.querySelectorAll('.lede, #story, main section[id]')].filter(x => !x.matches('section') || x.id === 'story' || /^s\d+$/.test(x.id));
+    const story = [...document.querySelectorAll('#story, .chapter-lead, section.chapter > p')];
     const words = new Set();
     story.forEach(sec => {
       const c = sec.cloneNode(true);
@@ -143,7 +174,7 @@
     // the text a cold reader gets: the teaching prose in reading order. Left out: demos, source lines, the
     // knowledge-point map and the cluster table (reference material), the appendix and the check tables
     const blocks = [...mainEl.querySelectorAll('h1, h2, h3, p, li, dt, dd, figcaption, th, td, .stat, .keyeq .tex-block')]
-      .filter(b => !b.closest('.demo, #appendix, #checks, #map, #cluster, .src') && !b.parentElement.closest('p, li, dd, td, th, figcaption'));
+      .filter(b => !b.closest('.demo, .live, #appendix, #checks, #map, #cluster, .backup-divider, .src') && !b.parentElement.closest('p, li, dd, td, th, figcaption'));
     // what a reader sees: an inline formula as its glyphs (not the LaTeX kept for screen readers), superscripts as ^
     const visibleText = b => {
       const c = b.cloneNode(true);
@@ -155,11 +186,11 @@
     };
     // a typeset formula reaches the reader as symbols, not LaTeX source; its symbols are listed in the card below it
     out.readingText = blocks.map(b => (/^H[123]$/.test(b.tagName) ? '\n' + '#'.repeat(+b.tagName[1]) + ' ' : '') +
-      (b.classList.contains('tex-block') ? '[公式：頁面上以數學符號排版顯示，各符號的意思見下方「符號與出處」]'
-        : b.classList.contains('stat') ? '[數字卡] ' + [...b.children].map(x => x.textContent.trim()).join('：')
+      (b.classList.contains('tex-block') ? (EN ? '[formula: typeset with mathematical symbols on the page; each symbol is explained under "Symbols and source"]' : '[公式：頁面上以數學符號排版顯示，各符號的意思見下方「符號與出處」]')
+        : b.classList.contains('stat') ? (EN ? '[number card] ' : '[數字卡] ') + [...b.children].map(x => x.textContent.trim()).join('：')
         : visibleText(b).replace(/\s+/g, ' ').trim())).join('\n');
     // figures of the paper are the real files (original bitmap or vector), not screenshots
-    out.figures = [...document.querySelectorAll('main .figure img, main figure img')].map(i => ({ src: i.getAttribute('src') || '', ok: /-real\.(svg|png|jpe?g|gif|webp)$/i.test(i.getAttribute('src') || ''), loaded: i.complete && i.naturalWidth > 0 }));
+    out.figures = [...document.querySelectorAll('main .figure img, main figure img')].map(i => ({ src: i.getAttribute('src') || '', crop: !!i.closest('.pdf-crop'), ok: !!i.closest('.pdf-crop') || /-real\.(svg|png|jpe?g|gif|webp)$/i.test(i.getAttribute('src') || ''), loaded: i.complete && i.naturalWidth > 0 }));
     // clicking a figure opens it in the popup
     out.figures.forEach(f => {
       const img = [...document.querySelectorAll('main .figure img, main figure img')].find(i => i.getAttribute('src') === f.src);
@@ -171,7 +202,7 @@
     // the page shows confirmed content only; unconfirmed items belong in the paper notes
     const text = (document.querySelector('main') || document.body).innerText;
     out.unconfirmed = [];
-    ['尚未確認', '待驗證', '還沒確認'].forEach(w => {
+    ['尚未確認', '待驗證', '還沒確認', 'not yet confirmed', 'to be verified', 'unverified', 'TBD'].forEach(w => {
       let i = text.indexOf(w);
       while (i >= 0) { out.unconfirmed.push(text.slice(Math.max(0, i - 30), i + w.length + 10).replace(/\s+/g, ' ')); i = text.indexOf(w, i + 1); }
     });

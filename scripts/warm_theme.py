@@ -66,6 +66,21 @@ WARM_EXTRA = """
   .keyeq .plain, .keyeq .tex-block, .keyeq .katex { color: #f1e8dc !important; }
   .keyeq .w-a { color: #67e8f9 !important; } .keyeq .w-b { color: #fbbf24 !important; }
   .keyeq .w-c { color: #c4b5fd !important; } .keyeq .w-d { color: #86efac !important; }
+  .keyeq-head { color: #bba98f !important; } .keyeq-head b { color: #f0b27a !important; }
+  .keyeq details, .keyeq summary { color: #dfd2c1 !important; }
+  /* live formula rows (PR.live) on the espresso card */
+  .keyeq .live { border-top-color: #5a4a3e; }
+  .keyeq .live-ctl { color: #dfd2c1; } .keyeq .live-ctl input { accent-color: #e8956a; }
+  .keyeq .live-ctl output { color: #fbbf24; } .keyeq .live-note { color: #bba98f; }
+  .keyeq .live-seg button { background: #3b3029; color: #f1e8dc; border-color: #6e5d4c; }
+  .keyeq .live-seg button[aria-pressed="true"] { background: #b4532a; border-color: #e8956a; color: #fff; }
+  .keyeq .live-out { color: #f1e8dc; }
+  /* overview cards and chapter leads */
+  .ov-card { background: #fffdf9; border-color: #e2d6c3; } .ov-card:hover { border-color: #b4532a; }
+  .ov-kicker { color: #b4532a; } .ov-card h3 { color: var(--navy); }
+  .chapter-lead { color: #5a4636; border-left-color: #b4532a; font-family: var(--serif); }
+  .chapter > h2 .step-no { background: var(--navy); color: #faf8f4; }
+  .backup-divider { border-color: #cdbca3; background: #f6efe3; }
 """
 CANVAS_PATCH = """<script>
 /* warm neutrals inside canvases: slate greys become warm greys; data colours are unchanged */

@@ -17,8 +17,10 @@ The page as a whole also fails when the formula layer is incomplete (no formula
 sections or map, a map node pointing nowhere, a formula section missing from the
 map, an empty symbol table, a KaTeX error or an untypeset formula), when a figure
 of the paper is a screenshot instead of its fig<N>-real file, when the key
-formulas break their rules (none, more than 5, outside a knowledge point, before
-its demo, without a plain sentence whose coloured words match the formula),
+formulas break their rules (none, outside a knowledge point, before its demo,
+without a plain sentence whose coloured words match the formula, or not live:
+every key formula card has PR.live controls and moving each one changes the
+line with the numbers substituted),
 when a display formula appears outside the knowledge points and the appendix,
 when the formula map is not in the appendix, when a registered term is used before it is
 explained or capitalised jargon in the storyline is not registered, when the cold read
@@ -27,11 +29,14 @@ not marked 已修正, or has no 理解檢查 that starts with 正確, when no
 section is marked data-traditional="1",
 a map entry has no section, or the text contains unconfirmed wording
 (尚未確認, 待驗證, 還沒確認), which belongs in the paper notes instead.
-It also reads index.html as text and fails the page when the storyline (from
-#story to the knowledge-point map) is longer than STORY_LIMIT characters, a
-storyline paragraph has more than 5 sentences, a sentence of the storyline or of
-a knowledge point is longer than SENTENCE_LIMIT, a knowledge-point field has more
-than 2 sentences, a source sits in brackets inside a sentence (it belongs in the
+The structure must be: six cards at the top (#story .ov-card, kickers Problem,
+Before, This paper, Result, Weak spots, Next steps, in that order), each linking
+to its chapter (section.chapter #ch-1 to #ch-6, each with a .chapter-lead), and
+every knowledge point inside a chapter.
+It also reads index.html as text and fails the page when the six cards are
+longer than the card limit, a paragraph of the cards or chapters has more than 5
+sentences, a sentence is longer than the sentence limit, a knowledge-point field
+has more than 2 sentences, a source sits in brackets inside a sentence (it belongs in the
 step's <p class="src"> line or a <span class="cite">), or the page names
 something itself (本頁稱為, 我們稱 ...) instead of using the paper's or the
 standard term.
@@ -52,12 +57,16 @@ HERE = Path(__file__).resolve().parent
 # Reading load. Web readers mostly scan (NN/g: 79% scan, 16% read word by word) and plain-language
 # guidance splits sentences over 25 English words and keeps paragraphs to 5 sentences (GOV.UK);
 # 40 is the Chinese equivalent used here (CJK characters, plus one per English word or number).
-STORY_LIMIT = 3000
-SENTENCE_LIMIT = 40
+# The six cards are the summary of the whole paper: about 75 words (or 150 characters) per card.
+LIMITS = {"en": {"story": 450, "sentence": 25}, "zh": {"story": 900, "sentence": 40}}
+CARDS = ["Problem", "Before", "This paper", "Result", "Weak spots", "Next steps"]
+STORY_LIMIT = LIMITS["en"]["story"]
+SENTENCE_LIMIT = LIMITS["en"]["sentence"]
 PARAGRAPH_SENTENCES = 5
 FIELD_SENTENCES = 2
 INLINE_SOURCE = re.compile(r"[（(][^（）()]*(原論文報告|本次實際重現|Section|Table|Fig\.|p\.\s?\d|§)[^（）()]*[）)]")
-COINED = re.compile(r"本頁(?:稱|把它叫|把這[^，。]{0,6}叫|叫它)|我們(?:稱|把它叫)|以下(?:簡)?稱為|姑且稱|暫且稱")
+COINED = re.compile(r"本頁(?:稱|把它叫|把這[^，。]{0,6}叫|叫它)|我們(?:稱|把它叫)|以下(?:簡)?稱為|姑且稱|暫且稱"
+                    r"|\b(?:we|we'll|we will|let's|this page)\s+(?:call|name|refer to)\b|\bhereafter (?:called|referred to)\b", re.I)
 
 
 def _plain(fragment):
@@ -70,26 +79,36 @@ def _units(sentence):
 
 
 def _sentences(text):
-    return [x.strip() for x in re.split(r"(?<=[。！？!?])", text) if _units(x) > 0]
+    # Chinese ends a sentence at 。！？; English at . ! ? followed by a space and a capital, a digit or a quote
+    parts = re.split(r"(?<=[。！？])|(?<=[.!?])\s+(?=[A-Z\"'(])", text)
+    return [x.strip() for x in parts if x and _units(x) > 0]
 
 
 def text_problems(page_html):
-    """Reading-load checks on the page source; returns (problems, story_length)."""
+    """Reading-load checks on the page source; returns (problems, story_length, limits)."""
+    global STORY_LIMIT, SENTENCE_LIMIT
+    lang = "zh" if re.search(r'<html[^>]*\blang="zh', page_html, re.I) else "en"
+    STORY_LIMIT, SENTENCE_LIMIT = LIMITS[lang]["story"], LIMITS[lang]["sentence"]
     src = re.sub(r"<!--.*?-->|<script.*?</script>|<style.*?</style>", "", page_html, flags=re.S)
     problems = []
     start = src.find('<section id="story"')
-    if start < 0:  # a page made before the storyline had its own id starts at its first section
+    if start < 0:  # a page made before the cards had their own id starts at its first section
         start = src.find("<section", max(src.find("<main"), 0))
-    end = min([i for i in (src.find('<section id="map"'), src.find('<section id="kps"'),
-                           src.find('<section id="cluster"')) if i > start] or [len(src)])
-    story = src[start:end] if start >= 0 else ""
-    blocks = [(m.group(1), m.group(2) or "", m.group(3)) for m in
-              re.finditer(r"<(p|li)(\s[^>]*)?>(.*?)</\1>", story, re.S)]
-    prose = [(tag, _plain(body)) for tag, attrs, body in blocks
-             if not re.search(r'class="[^"]*\b(src|meta|note|sub)\b', attrs)]
-    story_len = sum(_units(t) for _, t in prose)
+    first_ch = src.find('<section id="ch-1"', start)
+    end = min([i for i in (src.find('id="backup"'), src.find('<section id="map"'), src.find('<section id="cluster"'),
+                           src.find('<div id="appendix"')) if i > start] or [len(src)])
+    cards_end = first_ch if first_ch > start else end
+    para = lambda part: [(m.group(1), _plain(m.group(3))) for m in re.finditer(r"<(p|li)(\s[^>]*)?>(.*?)</\1>", part, re.S)
+                         if not re.search(r'class="[^"]*\b(src|meta|note|sub)\b', m.group(2) or "")]
+    cards = para(src[start:cards_end])
+    # chapter prose: everything between the cards and the backup material except the knowledge points' fields,
+    # demos and formula cards, which have their own limits or are generated
+    body = re.sub(r'<div class="(?:demo|keyeq)[^"]*"[^>]*>.*?</div>\s*(?=<|$)', "", src[cards_end:end], flags=re.S)
+    body = re.sub(r"<dl>.*?</dl>", "", body, flags=re.S)
+    prose = cards + para(body)
+    story_len = sum(_units(t) for _, t in cards)
     if story_len > STORY_LIMIT:
-        problems.append(f"導讀有 {story_len} 字，上限 {STORY_LIMIT}：同一件事只講一次，細節移到知識點")
+        problems.append(f"開頭 6 張卡片共 {story_len} {'words' if lang == 'en' else '字'}，上限 {STORY_LIMIT}：卡片只放結論，細節移到該章")
     long_s, long_p, inline = [], [], []
     for tag, text in prose:
         ss = _sentences(text)
@@ -97,16 +116,16 @@ def text_problems(page_html):
             long_p.append(f"{len(ss)} 句：{text[:30]}…")
         long_s += [x for x in ss if _units(x) > SENTENCE_LIMIT]
         inline += INLINE_SOURCE.findall(text) and [text[:30]] or []
-    fields = [_plain(m.group(1)) for m in re.finditer(r"<dd>(.*?)</dd>", src[end:].split('<div id="appendix"')[0], re.S)]
+    fields = [_plain(m.group(1)) for m in re.finditer(r"<dd>(.*?)</dd>", src[cards_end:end], re.S)]
     long_f = [f"{len(_sentences(t))} 句：{t[:30]}…" for t in fields if len(_sentences(t)) > FIELD_SENTENCES]
     for t in fields:
         long_s += [x for x in _sentences(t) if _units(x) > SENTENCE_LIMIT]
         if INLINE_SOURCE.search(t):
             inline.append(t[:30])
     if long_p:
-        problems.append(f"{len(long_p)} 段導讀超過 {PARAGRAPH_SENTENCES} 句：" + "；".join(long_p[:5]))
+        problems.append(f"{len(long_p)} 段超過 {PARAGRAPH_SENTENCES} 句：" + "；".join(long_p[:5]))
     if long_s:
-        problems.append(f"{len(long_s)} 句超過 {SENTENCE_LIMIT} 字，拆成短句：" + "；".join(x[:24] + "…" for x in long_s[:8]))
+        problems.append(f"{len(long_s)} 句超過 {SENTENCE_LIMIT} {'words' if lang == 'en' else '字'}，拆成短句：" + "；".join(x[:40] + "…" for x in long_s[:8]))
     if long_f:
         problems.append(f"{len(long_f)} 個知識點欄位超過 {FIELD_SENTENCES} 句：" + "；".join(long_f[:5]))
     if inline:
@@ -114,7 +133,7 @@ def text_problems(page_html):
     coined = sorted(set(COINED.findall(_plain(src))))
     if coined:
         problems.append("頁面自己取了名字（" + "、".join(coined) + "）：改用論文的名詞或標準名詞，第一次出現時用一句白話解釋")
-    return problems, story_len
+    return problems, story_len, lang
 
 
 def find_browser():
@@ -221,16 +240,14 @@ def main(topic_dir):
         problems.append(f"{f['texFallback']} 個公式沒有排版（katex/ 沒有載入）")
     keys = res.get("keyFormulas", [])
     if f.get("sections") and not keys:
-        problems.append("沒有核心公式卡（.keyeq）：從公式清單選 1 到 5 個，放進對應知識點的示範之後")
-    if len(keys) > 5:
-        problems.append(f"核心公式 {len(keys)} 個，上限 5 個；其餘公式只放附錄")
+        problems.append("沒有公式卡（.keyeq）：知識點用到的每一條公式都放一張，放在示範之後")
     for k in keys:
-        where = f"核心公式卡（{k['kp'] or '不在知識點裡'}）"
+        where = f"公式卡（知識點 {k['kp'] or '？'}{' ' + k['name'] if k.get('name') else ''}）"
         if not k["kp"]:
             problems.append(where + "應放在知識點區塊內")
             continue
-        if not k["formulaKp"]:
-            problems.append(where + "所在的知識點沒有公式動畫（data-formula=\"1\"），讀者看不到代入數字的過程")
+        if not k["formulaKp"] and not k.get("live"):
+            problems.append(where + "看不到代入數字的過程：加上 PR.live 互動列，或讓所在知識點有公式動畫（data-formula=\"1\"）")
         if not k["afterDemo"]:
             problems.append(where + "應放在示範之後：先操作、看數字，再看一般式")
         if not k["plain"]:
@@ -243,11 +260,33 @@ def main(topic_dir):
             problems.append(where + "指向關鍵詞時，公式沒有標出對應的項")
         if not k["typeset"]:
             problems.append(where + "的公式沒有排版")
+        if not k.get("live"):
+            problems.append(where + "不能互動：加 data-live=\"名稱\"，並在 demos.js 用 PR.live('名稱', {controls, tex}) 加上滑桿與代入數字的算式")
+        elif k.get("liveControls", 0) == 0 or k.get("liveChanged", 0) < k.get("liveControls", 0):
+            problems.append(where + f"的互動控制項 {k.get('liveChanged', 0)}/{k.get('liveControls', 0)} 會改變代入數字的算式，每個都要會變")
     if res.get("storyFormulas"):
-        problems.append(f"重點整理、故事線或論文群比較裡有 {res['storyFormulas']} 個獨立公式；公式只放在知識點或附錄")
+        problems.append(f"知識點與附錄以外有 {res['storyFormulas']} 個獨立公式（卡片、章節開頭或論文群表）；公式只放在知識點或附錄")
     if not res.get("overviewInAppendix", True):
         problems.append("公式關係圖應放在附錄（#appendix），不要放在頁首")
-    print(f"公式：核心 {len(keys)} 個（上限 5）；附錄 {f.get('sections', 0)} 節、關係圖 {f.get('mapNodes', 0)} 個方塊、符號 {f.get('symbols', 0)} 個")
+    st = res.get("structure", {})
+    if st.get("cards") != CARDS:
+        problems.append("開頭應是 6 張卡片，依序為 " + "、".join(CARDS) + "（.ov-kicker）；目前是：" + "、".join(st.get("cards") or ["沒有"]))
+    want = [f"#ch-{i}" for i in range(1, 7)]
+    if st.get("cardLinks") and st["cardLinks"] != want[:len(st["cardLinks"])]:
+        problems.append("每張卡片要連到它的章節（#ch-1 到 #ch-6）：" + "、".join(x or "（沒有連結）" for x in st["cardLinks"]))
+    chs = st.get("chapters", [])
+    if [c["id"] for c in chs] != [w[1:] for w in want]:
+        problems.append("頁面應依序有 6 章 section.chapter（ch-1 到 ch-6），對應 6 張卡片；目前：" + "、".join(c["id"] for c in chs))
+    for c in chs:
+        if not c["lead"]:
+            problems.append(f"{c['id']} 沒有開頭的一句結論（.chapter-lead）")
+    for c in chs[:4]:
+        if not c["kps"]:
+            problems.append(f"{c['id']}（{c['name']}）底下沒有知識點：這一章的內容要由知識點展開")
+    if st.get("kpOutside"):
+        problems.append("這些知識點不在任何一章裡，應移到它支撐的那張卡片的章節：" + ", ".join(st["kpOutside"]))
+    print(f"結構：卡片 {len(st.get('cards', []))} 張，章節 {len(chs)} 章，每章知識點 " + " / ".join(str(c["kps"]) for c in chs))
+    print(f"公式卡：{len(keys)} 張，可互動 {sum(1 for k in keys if k.get('live'))} 張；附錄 {f.get('sections', 0)} 節、關係圖 {f.get('mapNodes', 0)} 個方塊、符號 {f.get('symbols', 0)} 個")
     t = res.get("terms", {})
     if not t.get("count"):
         problems.append("沒有名詞表：在 demos.js 用 PR.terms({...}) 列出本頁的專有名詞，每個附一句白話")
@@ -258,7 +297,7 @@ def main(topic_dir):
     for k in t.get("dfnNotListed", []):
         problems.append(f"<dfn data-term=\"{k}\"> 不在名詞表裡")
     if t.get("unlisted"):
-        problems.append("開頭與故事線用了沒列入名詞表的術語：" + "、".join(t["unlisted"][:30]))
+        problems.append("卡片與章節開頭用了沒列入名詞表的術語：" + "、".join(t["unlisted"][:30]))
     (work / "verify" / "reading_text.txt").write_text(res.get("readingText", ""), encoding="utf-8")
     cold = work / "verify" / "cold_read.md"
     if not cold.exists():
@@ -288,10 +327,11 @@ def main(topic_dir):
             problems.append("論文圖載入失敗: " + fg["src"])
         elif not fg.get("popup"):
             problems.append("點論文圖沒有開出彈窗: " + fg["src"])
-    print(f"論文圖：{len(figs)} 張，真實圖檔 {sum(f['ok'] for f in figs)} 張")
-    tp, story_len = text_problems(page.read_text(encoding="utf-8"))
+    print(f"論文圖：{len(figs)} 張，真實圖檔 {sum(f['ok'] and not f.get('crop') for f in figs)} 張，原文截圖（弱點的證據）{sum(bool(f.get('crop')) for f in figs)} 張")
+    tp, story_len, lang = text_problems(page.read_text(encoding="utf-8"))
     problems += tp
-    print(f"閱讀量：導讀 {story_len} 字（上限 {STORY_LIMIT}），句長上限 {SENTENCE_LIMIT} 字")
+    unit = "words" if lang == "en" else "字"
+    print(f"閱讀量（{lang}）：6 張卡片 {story_len} {unit}（上限 {STORY_LIMIT}），句長上限 {SENTENCE_LIMIT} {unit}")
     for p in problems:
         bad += 1
         print("未通過：" + p)

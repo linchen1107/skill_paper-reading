@@ -24,6 +24,8 @@
  * explanation on hover.
  * Key formula card, placed after a demo: <div class="keyeq"> with a plain sentence whose coloured words
  * (<span class="w-a">…</span>, w-b, w-c, w-d) match the formula's \ca \cb \cc \cd terms; pointing at one marks both.
+ * Live formula card: <div class="keyeq" data-live="name"> plus PR.live('name', {controls, tex}) in demos.js adds
+ * sliders or buttons and the formula with the current numbers substituted (spec above PR.live below).
  * Formula map (how the formulas connect; nodes jump to their section): PR.formulaMap('fmap', {...}),
  * spec documented above the function below. The left sidebar #toc is built from sections with data-toc;
  * a group with data-toc-open starts expanded, and groups inside #appendix are set apart and dimmed.
@@ -34,6 +36,9 @@
 (function () {
   'use strict';
   const PR = (window.PR = { demos: {}, checks: [], errors: [] });
+  // interface words follow the page language: <html lang="zh-Hant"> gives Chinese, anything else English
+  const T = (zh, en) => (/^zh/i.test(document.documentElement.lang || '') ? zh : en);
+  PR.T = T;
   const COLORS = ['#60a5fa', '#f87171', '#4ade80', '#c084fc', '#fb923c', '#22d3ee'];
 
   function el(tag, attrs, ...kids) {
@@ -367,6 +372,16 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
 .keyeq .tex-block .katex *{transition:opacity .15s}
 .toc-grp:not(.toc-appx)+.toc-appx{margin-top:10px;padding-top:10px;border-top:1px solid #2b3643}
 #toc .toc-appx a.toc-group{color:#64748b}
+.live{margin-top:12px;padding-top:10px;border-top:1px dashed #334155}
+.live-row{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.live-ctl{display:inline-flex;align-items:center;gap:8px;color:#cbd5e1;font-size:14px}
+.live-ctl input{width:130px;accent-color:#67e8f9}
+.live-ctl output{min-width:2.6em;color:#fbbf24;font-variant-numeric:tabular-nums}
+.live-note{color:#94a3b8;font-size:14px}
+.live-seg{display:flex;flex-wrap:wrap;gap:6px}
+.live-seg button{background:#1e293b;color:#e2e8f0;border:1px solid #475569;border-radius:999px;padding:3px 12px;font:13px inherit;cursor:pointer}
+.live-seg button[aria-pressed="true"]{background:#155e75;border-color:#67e8f9;color:#fff}
+.live-out{margin-top:8px;overflow-x:auto;color:#e2e8f0}
 @media (max-width:860px){.keyeq dl{grid-template-columns:1fr}}`;
   function ensureCss() {
     if (document.getElementById('pr-widget-css')) return;
@@ -467,7 +482,7 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
       a.append(el('span', { class: 'toc-name', text: name }));
       if (lvl === 'group') {
         const grp = el('div', { class: 'toc-grp' });
-        const caret = el('button', { type: 'button', class: 'toc-caret', 'aria-label': '展開或收合' , text: '▸' });
+        const caret = el('button', { type: 'button', class: 'toc-caret', 'aria-label': T('展開或收合', 'Expand or collapse'), text: '▸' });
         const head = el('div', { class: 'toc-head' }, caret, a);
         sub = el('div', { class: 'toc-sub' });
         caret.addEventListener('click', () => grp.classList.toggle('open'));
@@ -498,13 +513,13 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
     // on a narrow screen the table of contents folds into a bar at the top; this button opens it
     const toc = document.getElementById('toc');
     if (toc && !document.getElementById('toc-toggle')) {
-      const tg = el('button', { id: 'toc-toggle', type: 'button', text: '☰ 目錄' });
+      const tg = el('button', { id: 'toc-toggle', type: 'button', text: T('☰ 目錄', '☰ Contents') });
       tg.addEventListener('click', () => toc.classList.toggle('open'));
       toc.prepend(tg);
       toc.addEventListener('click', ev => { if (ev.target.closest('a')) toc.classList.remove('open'); });
     }
     const bar = el('div', { id: 'pr-progress' });
-    const top = el('button', { id: 'pr-top', type: 'button', 'aria-label': '回到頂端', text: '↑' });
+    const top = el('button', { id: 'pr-top', type: 'button', 'aria-label': T('回到頂端', 'Back to top'), text: '↑' });
     top.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
     document.body.append(bar, top);
     const upd = () => {
@@ -550,7 +565,7 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
       else if (location.hash) PR.jump(location.hash, false);
       showBack();
     });
-    const back = el('button', { id: 'pr-back', type: 'button', text: '↩ 回到剛才的位置' });
+    const back = el('button', { id: 'pr-back', type: 'button', text: T('↩ 回到剛才的位置', '↩ Back to where you were') });
     back.addEventListener('click', () => history.back());
     document.body.append(back);
     showBack();
@@ -574,14 +589,14 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
       const nav = el('div', { class: 'kp-nav' });
       const eqs = [...document.querySelectorAll('section.eq-sec[id]')].filter(e => e.querySelector(`a[href="#${k.id}"]`));
       if (eqs.length) {
-        const f = el('span', { class: 'kp-eqs' }, '完整公式（附錄）：');
+        const f = el('span', { class: 'kp-eqs' }, T('完整公式（附錄）：', 'Full formulas (appendix): '));
         eqs.forEach(e => f.append(el('a', { href: '#' + e.id, class: 'kp-eq', text: e.dataset.tag || e.id })));
         nav.append(f);
       }
       const tag = x => (x.dataset.kp || x.id.replace(/^kp-/, ''));
       const side = el('span', { class: 'kp-step' });
       if (kps[i - 1]) side.append(el('a', { href: '#' + kps[i - 1].id, text: '← ' + tag(kps[i - 1]) }));
-      if (document.getElementById('map-formulas')) side.append(el('a', { href: '#map-formulas', text: '公式關係圖' }));
+      if (document.getElementById('map-formulas')) side.append(el('a', { href: '#map-formulas', text: T('公式關係圖', 'Formula map') }));
       if (kps[i + 1]) side.append(el('a', { href: '#' + kps[i + 1].id, text: tag(kps[i + 1]) + ' →' }));
       nav.append(side);
       const src = k.querySelector('.src');
@@ -623,9 +638,9 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
       const foot = el('div', { class: 'lb-foot' });
       foot.append(el('span', { class: 'lb-pos', text: `${idx + 1} / ${list.length}` }));
       if (cap) foot.append(el('span', { class: 'lb-cap', text: cap.textContent }));
-      foot.append(el('a', { href: src, target: '_blank', rel: 'noopener', class: 'lb-open', text: '開啟原始檔案' }));
-      box.append(btn('lb-close', '×', '關閉', close), stage, foot);
-      if (list.length > 1) box.append(btn('lb-prev', '‹', '上一張', () => show(idx - 1)), btn('lb-next', '›', '下一張', () => show(idx + 1)));
+      foot.append(el('a', { href: src, target: '_blank', rel: 'noopener', class: 'lb-open', text: T('開啟原始檔案', 'Open the original file') }));
+      box.append(btn('lb-close', '×', T('關閉', 'Close'), close), stage, foot);
+      if (list.length > 1) box.append(btn('lb-prev', '‹', T('上一張', 'Previous'), () => show(idx - 1)), btn('lb-next', '›', T('下一張', 'Next'), () => show(idx + 1)));
     }
     document.addEventListener('click', ev => {
       const img = ev.target.closest && ev.target.closest('main .figure img, main figure img');
@@ -646,7 +661,7 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
     if (!side || !/^https?:/.test(location.protocol)) return;
     fetch('studio/lab.html', { method: 'HEAD' }).then(r => {
       if (!r.ok || side.querySelector('.toc-lab')) return;
-      const a = el('a', { href: 'studio/lab.html', class: 'toc-lab' }, el('span', { class: 'toc-tag', text: 'LAB' }), el('span', { class: 'toc-name', text: '真實資料實驗 →' }));
+      const a = el('a', { href: 'studio/lab.html', class: 'toc-lab' }, el('span', { class: 'toc-tag', text: 'LAB' }), el('span', { class: 'toc-name', text: T('真實資料實驗 →', 'Labs on real data →') }));
       side.prepend(a);
     }).catch(() => {});
   }
@@ -668,10 +683,10 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
     const wrap = el('div', { class: 'anim' });
     if (anim.title) wrap.append(el('div', { class: 'anim-title', text: anim.title }));
     const bar = el('div', { class: 'anim-bar' });
-    const bStart = el('button', { type: 'button', class: 'anim-start', text: '⏮ 從頭' });
-    const bPrev = el('button', { type: 'button', class: 'anim-prev', text: '◀ 上一步' });
-    const bPlay = el('button', { type: 'button', class: 'anim-play', text: '▶ 播放' });
-    const bNext = el('button', { type: 'button', class: 'anim-next', text: '下一步 ▶' });
+    const bStart = el('button', { type: 'button', class: 'anim-start', text: T('⏮ 從頭', '⏮ Start') });
+    const bPrev = el('button', { type: 'button', class: 'anim-prev', text: T('◀ 上一步', '◀ Back') });
+    const bPlay = el('button', { type: 'button', class: 'anim-play', text: T('▶ 播放', '▶ Play') });
+    const bNext = el('button', { type: 'button', class: 'anim-next', text: T('下一步 ▶', 'Next ▶') });
     const pos = el('span', { class: 'anim-pos' });
     bar.append(bStart, bPrev, bPlay, bNext, pos);
     const list = el('ol', { class: 'anim-frames' });
@@ -692,18 +707,18 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
         if (f.value !== undefined) li.append(el('span', { class: 'anim-val', text: '= ' + PR.fmt(f.value) }));
         list.append(li);
       });
-      pos.textContent = `第 ${i + 1} / ${F.length} 步`;
+      pos.textContent = T(`第 ${i + 1} / ${F.length} 步`, `Step ${i + 1} of ${F.length}`);
       plotBox.innerHTML = '';
       for (let k = i; k >= 0; k--) if (F[k] && F[k].plot) { drawPlot(plotBox, F[k].plot); break; }
     }
-    function stop() { if (d.timer) { clearInterval(d.timer); d.timer = null; } bPlay.textContent = '▶ 播放'; }
+    function stop() { if (d.timer) { clearInterval(d.timer); d.timer = null; } bPlay.textContent = T('▶ 播放', '▶ Play'); }
     bStart.addEventListener('click', () => { stop(); i = 0; show(); });
     bPrev.addEventListener('click', () => { stop(); i = Math.max(0, i - 1); show(); });
     bNext.addEventListener('click', () => { stop(); i = Math.min(F.length - 1, i + 1); show(); });
     bPlay.addEventListener('click', () => {
       if (d.timer) { stop(); return; }
       if (i >= F.length - 1) i = 0;
-      show(); bPlay.textContent = '⏸ 暫停';
+      show(); bPlay.textContent = T('⏸ 暫停', '⏸ Pause');
       d.timer = setInterval(() => { if (i >= F.length - 1) { stop(); return; } i++; show(); }, anim.interval || 1100);
     });
     show();
@@ -763,18 +778,59 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
           d.out.append(grid);
           r.plots.forEach(p => drawPlot(grid, p));
         }
-        if (r.steps) d.out.append(tableOf([['步驟', '代入數值', '結果']].concat(r.steps), 'steps'));
+        if (r.steps) d.out.append(tableOf([T(['步驟', '代入數值', '結果'], ['Step', 'Numbers', 'Result'])].concat(r.steps), 'steps'));
         if (r.table) d.out.append(tableOf(r.table));
         if (r.note) d.out.append(el('p', { class: 'note', text: r.note }));
       } catch (e) {
         PR.errors.push(`demo-${id}: ${e.message}`);
-        d.out.append(el('p', { class: 'error', text: '計算錯誤：' + e.message }));
+        d.out.append(el('p', { class: 'error', text: T('計算錯誤：', 'Computation error: ') + e.message }));
       }
     }
 
     d.render = render; d.redraw = () => d.out && draw();
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
     else render();
+  };
+
+  // Live formula card: one row of controls under a key formula card and one line that shows the formula with the
+  // current numbers substituted and the result, recomputed on every change.
+  //   <div class="keyeq" data-live="sam">…</div>   in the page, then in demos.js:
+  //   PR.live('sam', {controls: [{key: 'x1', label: 'x₁', min: 0, max: 200, step: 1, value: 50},
+  //                              {key: 'light', label: 'light', options: [['wl', 'white'], ['505', '505 nm']], value: 'wl'}],
+  //                   tex: p => String.raw`\cos\cc{\theta} = ${…} = ${…}`});
+  PR.live = function (name, spec) {
+    function render() {
+      const card = document.querySelector(`.keyeq[data-live="${name}"]`);
+      if (!card) { PR.errors.push(`live ${name}: no .keyeq[data-live="${name}"]`); return; }
+      if (card.querySelector('.live')) return;
+      const p = {};
+      const row = el('div', { class: 'live-row' }), out = el('div', { class: 'live-out' });
+      const draw = () => {
+        try { out.innerHTML = PR.tex(spec.tex({ ...p }), true); }
+        catch (e) { PR.errors.push(`live ${name}: ${e.message}`); out.textContent = T('計算錯誤：', 'Computation error: ') + e.message; }
+      };
+      (spec.controls || []).forEach(c => {
+        p[c.key] = c.value;
+        if (c.options) {
+          const seg = el('div', { class: 'live-seg', role: 'group', 'aria-label': c.label || c.key });
+          c.options.forEach(([v, label]) => {
+            const b = el('button', { type: 'button', text: label, 'aria-pressed': String(v === c.value) });
+            b.addEventListener('click', () => { p[c.key] = v; seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); draw(); });
+            seg.append(b);
+          });
+          row.append(c.label ? el('span', { class: 'live-ctl' }, el('span', { text: c.label }), seg) : seg);
+        } else {
+          const val = el('output', { text: PR.fmt(+c.value) });
+          const input = el('input', { type: 'range', min: c.min, max: c.max, step: c.step || (c.max - c.min) / 100, value: c.value, 'aria-label': c.label || c.key });
+          input.addEventListener('input', () => { p[c.key] = +input.value; val.textContent = PR.fmt(+input.value); draw(); });
+          row.append(el('label', { class: 'live-ctl' }, el('span', { text: c.label || c.key }), input, val));
+        }
+      });
+      if (spec.note) row.append(el('span', { class: 'live-note', text: spec.note }));
+      card.append(el('div', { class: 'live' }, row, out));
+      draw();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else render();
   };
 
   PR.check = function (id, name, fn) { PR.checks.push({ id, name, fn }); };

@@ -4,7 +4,7 @@ Start with one paper, read the related research, identify where earlier methods 
 
 | Skill | Purpose |
 | --- | --- |
-| `reading` | Read about 20–30 related papers; build the research narrative, knowledge-point map, and interactive page |
+| `reading` | Read about 20–30 related papers in groups; build one interactive page to present from: six cards, a chapter of knowledge points under each, live formulas |
 | `annotate` | Create a paragraph-by-paragraph English–Chinese annotated reading of one paper |
 | `presentation` | Demonstrate the method with real data, a Python backend, and interactive labs |
 
@@ -63,12 +63,12 @@ To update a personal install, run `git -C "$HOME/skill_paper-reading" pull --ff-
 
 | Claude Code | Codex | Main output |
 | --- | --- | --- |
-| `/paper-reading:reading` | `$paper-reading-reading` | `index.html`, `papers/`, per-point checks |
+| `/paper-reading:reading` | `$paper-reading-reading` | `index.html` (six cards and chapters), `papers/`, per-point checks |
 | `/paper-reading:annotate` | `$paper-reading-annotate` | `annotated.html` |
 | `/paper-reading:presentation` | `$paper-reading-presentation` | `studio/lab.html`, `studio/server.py` |
 
 Give `reading` a PDF, arXiv link, or paper title. Its interactive examples do not reproduce the paper on real data; use `presentation` when you need real data and a runnable backend.
 
-Pages use a warm light theme by default (`scripts/warm_theme.py`). When you will present the paper, ask `reading` for a talk page: `talk.html` runs top to bottom from the basics to the critique, with live formula cards. It can also publish the pages to GitHub Pages with QR codes in the header.
+The page opens with six cards (Problem, Before, This paper, Result, Weak spots, Next steps); below each card is its chapter, and the knowledge points that explain the card sit inside it, so the page can be presented from top to bottom. Every formula is a live card with the numbers substituted, confirmed errors of the paper are shown with a boxed crop of its text (`scripts/crop_pdf_text.py`), and the page is English with a warm light theme by default (`scripts/warm_theme.py`). `reading` can also publish the page to GitHub Pages with QR codes in the header.
 
 Check a reading page with `python .agents/skills/paper-reading-reading/scripts/check_page.py <topic>`. After changing a Claude skill or shared tool, regenerate the Codex skills with `python scripts/build_codex.py`.

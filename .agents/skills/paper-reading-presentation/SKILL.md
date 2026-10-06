@@ -11,7 +11,7 @@ Keep it small: one Python file, one lab page, 2 to 5 labs, no frontend framework
 
 ## Language
 
-The lab page is in Traditional Chinese as used in Taiwan, like the reading page, so one report uses one language: lab titles, questions, control labels, summaries and notes; technical terms stay in English when that is clearer. Short declarative sentences: a number and its source instead of an adjective, no marketing words. Code and comments are in English. Replies to the user in chat are in Traditional Chinese (Taiwan).
+The lab page template is in Traditional Chinese as used in Taiwan (the reading page is in English unless the user asked for Chinese); within the lab page use one language: lab titles, questions, control labels, summaries and notes; technical terms stay in English when that is clearer. Short declarative sentences: a number and its source instead of an adjective, no marketing words. Code and comments are in English. Replies to the user in chat are in Traditional Chinese (Taiwan).
 
 ## Input
 
@@ -19,7 +19,7 @@ The output folder of $paper-reading-reading for the same topic (`index.html`, `w
 
 ## Step 0: confirm the plan in chat
 
-If this plan has not already been approved, write no files yet; prior user authorization counts. Read the reading output (the storyline, the knowledge points and the note on the user's paper) and check the machine: `python --version`, whether the packages the method needs import, whether a GPU is usable (`nvidia-smi`, and whether torch sees it), and free disk space. Then list in the chat. Continue if the user already authorized this scope; otherwise wait for one reply:
+If this plan has not already been approved, write no files yet; prior user authorization counts. Read the reading output (the six cards, their chapters and knowledge points, and the note on the user's paper) and check the machine: `python --version`, whether the packages the method needs import, whether a GPU is usable (`nvidia-smi`, and whether torch sees it), and free disk space. Then list in the chat. Continue if the user already authorized this scope; otherwise wait for one reply:
 
 1. **Labs**, 2 to 5. Each starts from a claim or a failure in the user's paper, with its location, and names the knowledge points it exercises. For each: what the user picks (sample, method, parameters), what the backend computes, what the page shows.
 2. **Data to download**: dataset, exact files, source URL, licence, size. Prefer a few small files over a whole dataset. If only large files exist, download one, cut the samples the labs need into `data/`, delete the large file, and say how much space it takes meanwhile. Say plainly when the paper's data is not public, and propose an openly licensed substitute collected the same way, labelled as a substitute. When no such data exists, a **substitute task** is allowed: real data from a related task the method also applies to (for example material detection instead of defect detection on the same kind of images). The lab's question then states which question it answers instead of the paper's, and its numbers are never compared with the paper's. Name any modality the labs cannot cover for lack of data (for example no polarised images), and say it on the lab page.

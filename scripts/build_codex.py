@@ -14,9 +14,10 @@ TARGET = ROOT / ".agents" / "skills"
 
 DESCRIPTIONS = {
     "reading": (
-        "Read a supplied research paper with its same-problem paper cluster, "
-        "explain prior failures and evidence, map every knowledge point, and build "
-        "an interactive teaching page. Also use for paper Discussion review or code search."
+        "Read a supplied research paper with its related papers group by group and build "
+        "one interactive page to present from: six cards (Problem, Before, This paper, Result, "
+        "Weak spots, Next steps), a chapter of knowledge points under each, live formulas. "
+        "Also use for paper Discussion review or code search."
     ),
     "annotate": (
         "Create a bilingual paragraph-by-paragraph annotated reading of one research "
@@ -196,7 +197,7 @@ def main() -> None:
         (folder / "SKILL.md").write_text(build(), encoding="utf-8")
 
     reading = TARGET / "paper-reading-reading"
-    for script in ("extract_figures.py", "fetch_papers.py", "check_page.py", "selftest.js", "serve.py", "build_notes.py", "warm_theme.py"):
+    for script in ("extract_figures.py", "fetch_papers.py", "check_page.py", "selftest.js", "serve.py", "build_notes.py", "warm_theme.py", "crop_pdf_text.py"):
         dest = reading / "scripts"
         dest.mkdir(exist_ok=True)
         shutil.copy2(ROOT / "scripts" / script, dest / script)
