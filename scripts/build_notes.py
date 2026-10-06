@@ -113,13 +113,13 @@ def body(lines):
 
 def convert(md):
     meta, lines = front_matter(md.read_text(encoding="utf-8").splitlines())
-    title = dict(meta).get("簡稱") or dict(meta).get("title") or md.stem
+    title = dict(meta).get("short") or dict(meta).get("title") or md.stem
     meta_html = "".join(f"<div><b>{html.escape(k)}</b><span>{inline(v)}</span></div>" for k, v in meta)
     page = f"""<!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><style>{CSS}</style></head>
 <body><main>
-<div class="top"><a href="../index.html#cluster">← 回到論文群</a>　·　<a href="{md.name}">原始 Markdown</a></div>
+<div class="top"><a href="../index.html#cluster">← Back to the paper cluster</a> · <a href="{md.name}">Original Markdown</a></div>
 {f'<div class="meta">{meta_html}</div>' if meta else ''}
 {body(lines)}
 </main></body></html>

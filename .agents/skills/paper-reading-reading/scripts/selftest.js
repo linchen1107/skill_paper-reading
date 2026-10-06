@@ -141,7 +141,7 @@
     const gloss = (window.PR && PR.glossary) || {};
     const dfns = [...mainEl.querySelectorAll('dfn[data-term]')];
     out.terms = { count: Object.keys(gloss).length, late: [], notExplained: [], dfnNotListed: [], unlisted: [] };
-    // a term inside a longer registered term (光譜 in 高光譜相機) is not a use of the shorter one
+    // a term inside a longer registered term ("spectrum" in "hyperspectral camera") is not a use of the shorter one
     const masked = k => Object.keys(gloss).filter(l => l !== k && l.length > k.length && l.includes(k))
       .reduce((t, l) => t.replace(new RegExp(PR.termRe(l).source, 'g' + PR.termRe(l).flags.replace('g', '')), x => '\u0000'.repeat(x.length)), full);
     Object.keys(gloss).forEach(k => {
@@ -186,8 +186,8 @@
     };
     // a typeset formula reaches the reader as symbols, not LaTeX source; its symbols are listed in the card below it
     out.readingText = blocks.map(b => (/^H[123]$/.test(b.tagName) ? '\n' + '#'.repeat(+b.tagName[1]) + ' ' : '') +
-      (b.classList.contains('tex-block') ? (EN ? '[formula: typeset with mathematical symbols on the page; each symbol is explained under "Symbols and source"]' : '[公式：頁面上以數學符號排版顯示，各符號的意思見下方「符號與出處」]')
-        : b.classList.contains('stat') ? (EN ? '[number card] ' : '[數字卡] ') + [...b.children].map(x => x.textContent.trim()).join('：')
+      (b.classList.contains('tex-block') ? '[formula: typeset with mathematical symbols on the page; each symbol is explained under "Symbols and source"]'
+        : b.classList.contains('stat') ? '[number card] ' + [...b.children].map(x => x.textContent.trim()).join(': ')
         : visibleText(b).replace(/\s+/g, ' ').trim())).join('\n');
     // figures of the paper are the real files (original bitmap or vector), not screenshots
     out.figures = [...document.querySelectorAll('main .figure img, main figure img')].map(i => ({ src: i.getAttribute('src') || '', crop: !!i.closest('.pdf-crop'), ok: !!i.closest('.pdf-crop') || /-real\.(svg|png|jpe?g|gif|webp)$/i.test(i.getAttribute('src') || ''), loaded: i.complete && i.naturalWidth > 0 }));
@@ -202,7 +202,7 @@
     // the page shows confirmed content only; unconfirmed items belong in the paper notes
     const text = (document.querySelector('main') || document.body).innerText;
     out.unconfirmed = [];
-    ['尚未確認', '待驗證', '還沒確認', 'not yet confirmed', 'to be verified', 'unverified', 'TBD'].forEach(w => {
+    ['not yet confirmed', 'to be verified', 'unverified', 'TBD'].forEach(w => {
       let i = text.indexOf(w);
       while (i >= 0) { out.unconfirmed.push(text.slice(Math.max(0, i - 30), i + w.length + 10).replace(/\s+/g, ' ')); i = text.indexOf(w, i + 1); }
     });

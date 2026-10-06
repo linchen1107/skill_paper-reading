@@ -1,7 +1,7 @@
 ---
 name: annotate
 model: sonnet
-description: Produce a single-file bilingual annotated reading of the one paper the user is reading. Every paragraph shows the English original with its key phrases highlighted in five colours (claims, key terms, evidence, concessions, method), a Traditional Chinese translation, and an aligned annotation card (what the paragraph does, its place in the argument, what to notice). Figures and tables appear where the text discusses them. Ends with an overview of the whole argument. Main paper only; no paper cluster. Use when the user wants to read a paper closely, see its argument structure, or get a Chinese–English side-by-side reading.
+description: Produce a single-file bilingual annotated reading of the one paper the user is reading. Every paragraph shows the English original with its key phrases highlighted in five colours (claims, key terms, evidence, concessions, method), a Traditional Chinese (Taiwan) translation, and an aligned English annotation card (what the paragraph does, its place in the argument, what to notice). Figures and tables appear where the text discusses them. Ends with an English overview of the whole argument. Everything except the translation is in English. Main paper only; no paper cluster. Use when the user wants to read a paper closely, see its argument structure, or get a Chinese–English side-by-side reading.
 ---
 
 # Annotate: a bilingual annotated reading of the main paper
@@ -12,9 +12,10 @@ The output is one HTML file the user reads from top to bottom. Keep it plain: no
 
 ## Language
 
-- Translations, annotations and the overview are in **Traditional Chinese as used in Taiwan**, following the wording rules of paper-reading:reading (Taiwanese terminology, complete sentences, no filler). Technical terms may stay in English, with the Chinese term on first use.
+- The purpose of this skill is the side-by-side reading: each paragraph shows the English original and its translation in **Traditional Chinese as used in Taiwan** (Taiwanese terminology, for example 資料 not 數據, 影片 not 視頻, 程式碼 not 代碼). Technical terms may stay in English in the translation, with the Chinese term on first use.
+- Everything else the page contains is in **English**: the annotation cards, the argument notes, the overview, the section bar, the legend, headings and interface labels. Follow the wording rules of paper-reading:reading (complete sentences, conclusion first, no filler). Replies to the user in chat are in Traditional Chinese (Taiwan).
 - The English original is quoted exactly; do not paraphrase or shorten it.
-- The translation is idiomatic academic Chinese, not word-for-word, and must not add or drop content.
+- The translation is idiomatic academic Traditional Chinese, not word-for-word, and must not add or drop content.
 
 ## Reading the paper
 
@@ -52,18 +53,18 @@ The body has `padding-top` large enough that neither bar covers content (about 1
   - The Chinese translation on a beige background (`#f0ece2`) with a 3px left border (`#c4b99a`), no highlights.
   - The page number of the paragraph (for example `p.3`), so every statement can be found in the PDF.
 - **Right: the annotation card** (light-grey `#f5f5f5`, 4px coloured left border matching the paragraph's main dimension):
-  1. **Function**: a short label, such as 引出問題, 提供證據, 反駁異議, 過渡銜接, 小結.
+  1. **Function**: a short label, such as Poses the problem, Provides evidence, Answers an objection, Transition, Summary.
   2. **Role in the argument**: where the paragraph sits in the chain and how it relates to the paragraphs before and after it.
-  3. **What to notice**: a writing technique worth learning, or a possible gap in the logic, with the reason. Write 無 when there is nothing worth saying; do not invent observations.
+  3. **What to notice**: a writing technique worth learning, or a possible gap in the logic, with the reason. Write "None" when there is nothing worth saying; do not invent observations.
 
 **Figures, tables and equations** appear as their own rows, at the point where the text first discusses them:
 
 - Figures: the left cell shows the figure as the paper holds it, `fig<N>-real.*` (the original bitmap or the vector SVG, never the screenshot copy `fig<N>.png`), with the caption in English and Chinese.
-- Tables: rebuilt as an HTML table from the text layer, with the caption in English and Chinese; cells the text layer leaves unclear are marked 尚未確認.
+- Tables: rebuilt as an HTML table from the text layer, with the caption in English and Chinese; cells the text layer leaves unclear are marked "not yet confirmed".
 - The right card says what it shows, which claim it supports, and whether the text's claim matches what the image actually shows.
 - Equations are shown as images or typeset, and each symbol is explained in the card.
 
-Interface and annotations use IBM Plex Sans, falling back to Noto Sans TC or Microsoft JhengHei for Chinese. Page background `#faf8f4`.
+Interface and annotations use IBM Plex Sans, falling back to Noto Sans TC or Microsoft JhengHei for the Chinese translation. Page background `#faf8f4`.
 
 ### D. Argument overview (at the bottom)
 
@@ -86,7 +87,7 @@ At 1024px and wider, two columns. Below 1024px, one column: each annotation card
 
 ## Rules
 
-**Faithful to the paper.** Every statement in a card or the overview is about the paper and traceable to a page. General knowledge is labelled 背景知識. If the paper does not say something, write 原文未說明. Possible problems in the logic are the reader's inference and are marked 待驗證的推論.
+**Faithful to the paper.** Every statement in a card or the overview is about the paper and traceable to a page. General knowledge is labelled "Background". If the paper does not say something, write "not stated in the paper". Possible problems in the logic are the reader's inference and are marked "Unverified inference".
 
 **The whole paper.** No paragraph of the main text is skipped. If the paper is long, build the file section by section in the same file until it is complete; do not stop after the first sections.
 

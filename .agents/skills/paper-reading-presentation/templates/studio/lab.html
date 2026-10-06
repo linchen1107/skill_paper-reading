@@ -1,16 +1,16 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>真實資料實驗</title>
+<title>Real-data labs</title>
 <link rel="stylesheet" href="../katex/katex.min.css">
 <style>
   :root { --bg: #0f1419; --panel: #151c24; --card: #111820; --ink: #e2e8f0; --muted: #94a3b8; --line: #2b3643;
           --accent: #67e8f9; --gold: #fbbf24; --good: #4ade80; --bad: #f87171;
-          --serif: "Noto Serif TC", "Source Han Serif TC", Georgia, serif; }
+          --serif: "Noto Serif", Georgia, serif; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 "Noto Sans", "Segoe UI", system-ui, sans-serif; }
   a { color: var(--accent); }
   .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 16px; padding: 10px 20px;
          background: #0c1116; border-bottom: 1px solid var(--line); }
@@ -90,13 +90,13 @@
 </head>
 <body>
 <div class="top">
-  <span class="brand" id="brand">真實資料實驗</span>
-  <span class="chip">每次操作都由 Python 後端即時計算</span>
-  <a class="back" href="../index.html">← 回閱讀頁</a>
+  <span class="brand" id="brand">Real-data labs</span>
+  <span class="chip">Every action is computed live by the Python backend</span>
+  <a class="back" href="../index.html">← Back to the reading page</a>
 </div>
 <div class="layout">
-  <nav id="lab-list" aria-label="實驗列表"></nav>
-  <main id="lab"><p class="empty">正在載入實驗…</p></main>
+  <nav id="lab-list" aria-label="Lab list"></nav>
+  <main id="lab"><p class="empty">Loading labs…</p></main>
 </div>
 <script src="../katex/katex.min.js"></script>
 <script src="../widgets.js"></script>

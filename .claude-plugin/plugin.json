@@ -1,6 +1,6 @@
 {
   "name": "paper-reading",
   "description": "Read a paper with its related papers group by group and turn it into one interactive page to present from: six cards and a chapter of knowledge points under each (reading), produce a bilingual annotated reading of the main paper (annotate), and run its labs on real dataset samples with a Python backend (presentation).",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": { "name": "linchen1107" }
 }

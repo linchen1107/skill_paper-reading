@@ -31,7 +31,7 @@ def free_port(host, start):
                 return port
             except OSError:
                 continue
-    sys.exit(f"{start} 到 {start + 49} 之間沒有可用的埠號")
+    sys.exit(f"no free port between {start} and {start + 49}")
 
 
 def remote_hint(host, port):
@@ -44,10 +44,10 @@ def remote_hint(host, port):
         ts = out.stdout.split()[0] if out.returncode == 0 and out.stdout.split() else ""
     except (OSError, subprocess.SubprocessError):
         pass
-    lines = ["這是遠端連線：你的瀏覽器開不到這台機器的 127.0.0.1。"]
+    lines = ["This is a remote connection: your browser cannot reach 127.0.0.1 on this machine."]
     if ts:
-        lines.append(f"  只給自己的 Tailscale 裝置看：加上 --host {ts}，網址會是 http://{ts}:{port}/")
-    lines.append(f"  或在自己的電腦轉接：ssh -L {port}:127.0.0.1:{port} <帳號>@<這台機器>")
+        lines.append(f"  To show it only to your own Tailscale devices, add --host {ts}; the URL will be http://{ts}:{port}/")
+    lines.append(f"  Or forward the port from your own computer: ssh -L {port}:127.0.0.1:{port} <user>@<this machine>")
     return "\n".join(lines)
 
 

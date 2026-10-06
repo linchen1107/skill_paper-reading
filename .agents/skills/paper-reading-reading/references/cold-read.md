@@ -6,57 +6,57 @@ The writer of a page already knows the field, so they cannot see which words and
 
 1. Run `check_page.py`; it writes `<topic>/_work/verify/reading_text.txt`, the page's headings and prose in reading order.
 2. Dispatch one subagent (the same model setting as the other subagents) with the prompt below, filling in the absolute paths. Give it nothing else: no paper, no notes, no summary of the topic.
-3. **Check the reader's understanding.** Compare its 3 sentences under 讀完後我理解的內容 with the paper, and add to `cold_read.md`:
+3. **Check the reader's understanding.** Compare its 3 sentences under "After reading, what I understood" with the paper, and add to `cold_read.md`:
    ```
-   ## 理解檢查
-   正確
+   ## Understanding check
+   Correct
    ```
    or, when a sentence is wrong, what it got wrong. A wrong understanding means the page misleads: fix the page and run one new cold read.
-4. **Fix every [阻斷] item** on the page (explain the term where it first appears, add the missing step, give the number its scale, move the passage after what it needs), and end its line in `cold_read.md` with `→ 已修正：<what changed>`. Fix a [輕微] or 可以刪掉 item when one sentence does it (delete what is repeated or noise, replace a made-up name with the paper's or the standard term); list the rest in the final reply.
-5. Run `check_page.py` again. It fails while a [阻斷] line lacks 已修正 or the 理解檢查 does not start with 正確.
+4. **Fix every [blocking] item** on the page (explain the term where it first appears, add the missing step, give the number its scale, move the passage after what it needs), and end its line in `cold_read.md` with `→ fixed: <what changed>`. Fix a [minor] or "Can be cut" item when one sentence does it (delete what is repeated or noise, replace a made-up name with the paper's or the standard term); list the rest in the final reply.
+5. Run `check_page.py` again. It fails while a [blocking] line lacks "→ fixed" or the "Understanding check" does not start with "Correct".
 
 **One cold read, not a loop.** A fresh reader always finds something new: on one run three successive readers listed 19, 41 and 14 unclear items, and with severity marks 2, 1 and 2 blocking items, each time different ones. So the cold read runs once, its blocking items are fixed and marked, and it is repeated only when the reader's understanding was wrong or the cards or chapters were rewritten after it.
 
 ## Prompt
 
 ```
-你是一位聰明、但從來沒有學過這個領域的讀者，例如別的實驗室的研究生。
-只讀這個檔案：<topic>/_work/verify/reading_text.txt。不要開啟任何其他檔案，不要上網查。
-不要用你自己對這個領域的知識補空缺：頁面沒有解釋的東西，就當作你不知道。
-這份文字只有教學的部分：開頭 6 張卡片（Problem、Before、This paper、Result、Weak spots、Next steps），以及每張卡片底下的一章和它的知識點；出處行、知識點地圖、論文群表和附錄都已拿掉，不必理會它們。頁面可能是英文，請用頁面的語言理解，用中文回報。
-知識點編號（例如 A4、C1）是給跳轉用的，看不懂它們本身不算卡住；但出處如果夾在句子中間、打斷了閱讀，就算一處問題。
-「[公式：……]」「[數字卡]」「[formula: …]」「[number card]」是頁面元件的位置標記，不算雜訊。
-每個知識點開頭的生活例子（Example）是刻意放的，用來先給畫面，不算雜訊。
+You are an intelligent reader who has never studied this field, for example a graduate student from another lab.
+Read only this file: <topic>/_work/verify/reading_text.txt. Do not open any other file and do not search the web.
+Do not fill gaps with your own knowledge of the field: whatever the page does not explain, treat as something you do not know.
+The file holds only the teaching part of the page: the 6 cards at the start (Problem, Before, This paper, Result, Weak spots, Next steps), and under each card its chapter and the chapter's knowledge points. Source lines, the knowledge-point map, the paper-groups table and the appendix have been removed; ignore them. Answer in English.
+Knowledge-point numbers (for example A4, C1) are for jumping; not understanding them is not a problem. A source placed in the middle of a sentence that interrupts the reading is a problem.
+"[formula: …]" and "[number card]" mark where a page widget sits; they are not noise.
+The everyday example (Example) that opens each knowledge point is deliberate, to give a picture first; it is not noise.
 
-依順序讀完，找出所有讓你卡住的地方：
-- 沒有解釋就使用的名詞或縮寫（包括模型、資料集、方法的名稱）
-- 跳過的步驟：前一句到後一句之間少了什麼
-- 沒有尺度的數字：不知道這個數字算好還是算差
-- 提到還沒介紹過的東西
-- 讀了兩次仍然看不懂的句子
-- 作者自己取的名字：不是論文或教科書的說法，你沒辦法拿去查（例如「本頁稱為……」）
-- 重複：同一件事用同樣的深度講了第二次（卡片講結論、章節展開、知識點用一句話接回章節再往下講細節，這是刻意的結構，不算重複）
-- 雜訊：刪掉之後不影響理解的句子、旁支知識、夾在句子中間的出處
+Read in order and find every place where you got stuck:
+- A term or abbreviation used without explanation (including names of models, datasets and methods)
+- A skipped step: something missing between one sentence and the next
+- A number without a scale: you cannot tell whether it is good or bad
+- Something mentioned before it has been introduced
+- A sentence you still cannot understand after reading it twice
+- A name the author made up: not the paper's or a textbook's term, so you cannot look it up (for example "this page calls …")
+- Repetition: the same thing said a second time at the same depth (the card states the conclusion, the chapter expands it, and a knowledge point restates it in one sentence before going further; this is deliberate structure, not repetition)
+- Noise: a sentence that can be cut without hurting understanding, side facts, a source in the middle of a sentence
 
-一個名詞只要頁面用白話說了它是什麼或做什麼，就算解釋過，即使縮寫的全名沒有展開。
+A term counts as explained once the page says in plain words what it is or does, even if the full name of an abbreviation is not spelled out.
 
-每一處看不懂的地方標上嚴重程度：
-- 〔阻斷〕不解決就跟不上主線（Problem → Before 為什麼不夠 → This paper 怎麼做 → Result 顯示什麼 → Weak spots），或會讓人誤解一個結果
-- 〔輕微〕某個知識點裡的細節不清楚，但主線仍然讀得懂
+Mark the severity of every place where you got stuck:
+- [blocking] cannot follow the main line without it (Problem -> why Before is not enough -> how This paper does it -> what Result shows -> Weak spots), or it would make you misunderstand a result
+- [minor] a detail inside one knowledge point is unclear, but the main line is still readable
 
-把結果用繁體中文寫進 <topic>/_work/verify/cold_read.md，格式如下（沒有卡住的地方就在清單位置寫「（無）」）：
+Write the result in English to <topic>/_work/verify/cold_read.md in this format (when nothing got you stuck, write "(none)" in place of the list):
 
-## 看不懂的地方
-- [阻斷]〔所在的標題〕「原句中卡住的片段」：卡住的原因
-- [輕微]〔所在的標題〕「原句中卡住的片段」：卡住的原因
+## Unclear
+- [blocking] [heading it is under] "the stuck fragment of the original sentence": why you got stuck
+- [minor] [heading it is under] "the stuck fragment of the original sentence": why you got stuck
 
-## 可以刪掉的地方
-- 〔所在的標題〕「片段」：重複／雜訊／自己取的名字，以及為什麼
+## Can be cut
+- [heading it is under] "fragment": repetition / noise / made-up name, and why
 
-## 讀完後我理解的內容
-用 3 句話說明：這篇論文要解決什麼問題、它怎麼做、證據顯示效果如何。
+## After reading, what I understood
+In 3 sentences: what problem this paper solves, how it does it, and what the evidence shows about how well it works.
 
-最後只回覆一行：阻斷幾處，輕微幾處，可以刪掉的地方幾處。
+Finally reply with one line only: how many blocking, how many minor, how many can be cut.
 ```
 
-The [輕微] items and 可以刪掉的地方 are printed as counts by `check_page.py` and do not block acceptance.
+The [minor] items and "Can be cut" items are printed as counts by `check_page.py` and do not block acceptance.

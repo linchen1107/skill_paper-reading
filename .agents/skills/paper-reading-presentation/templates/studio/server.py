@@ -44,7 +44,7 @@ def lab(name, title, question, source, params, knowledge=()):
     """Register a lab.
 
     name       short id used in the address, for example "ood"
-    title      what the user sees, in Traditional Chinese, for example "真實 SST-2 句子上的 OOD 偵測"
+    title      what the user sees, in English, for example "OOD detection on real SST-2 sentences"
     question   the claim or failure of the paper this lab tests, one sentence
     source     where in the paper, for example "Table V, Fig. 5"
     params     list of controls:
@@ -94,7 +94,7 @@ def remote(url, payload=None, about="", timeout=600):
     """Call a backend the project already has and return its JSON, instead of copying its code.
 
     url      for example "http://127.0.0.1:5160/api/estimate"; GET without payload, POST with one
-    about    one sentence for the page, for example "既有套件：每件 3 票時的錯誤率估計"
+    about    one sentence for the page, for example "existing package: error-rate estimate with 3 votes per item"
     The page states that these numbers were computed by that backend, with its address and time.
     If it is not running, the lab fails with a message that names the address.
     """
@@ -105,7 +105,7 @@ def remote(url, payload=None, about="", timeout=600):
         with urllib.request.urlopen(req, timeout=timeout) as r:
             value = json.loads(r.read())
     except OSError as e:
-        raise RuntimeError(f"專案既有的後端 {url} 沒有回應（{e}）；請先啟動它") from None
+        raise RuntimeError(f"The project's existing backend {url} did not respond ({e}); start it first") from None
     _USED_REMOTE.append({"url": url, "about": about or url, "ms": round((time.perf_counter() - start) * 1000)})
     return value
 
@@ -167,7 +167,7 @@ def run_lab(name, posted):
     result["elapsed_ms"] = round((time.perf_counter() - start) * 1000)
     result["params"] = params
     result["provenance"] = {
-        "live": f"這次操作在這台電腦即時計算，耗時 {result['elapsed_ms']} ms。",
+        "live": f"This run was computed live on this machine in {result['elapsed_ms']} ms.",
         "cached": [dict(m) for m in _USED_CACHE],
         "remote": [dict(m) for m in _USED_REMOTE],
     }
@@ -216,7 +216,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         name = path.removeprefix("/api/labs/")
         if not path.startswith("/api/labs/") or name not in LABS:
-            return self.send_json({"error": f"沒有名為 {name!r} 的實驗"}, 404)
+            return self.send_json({"error": f"No lab named {name!r}"}, 404)
         try:
             length = int(self.headers.get("Content-Length") or 0)
             posted = json.loads(self.rfile.read(length) or b"{}")
@@ -234,7 +234,7 @@ def free_port(host, start):
                 return port
             except OSError:
                 continue
-    sys.exit(f"{start} 到 {start + 49} 之間沒有可用的埠號")
+    sys.exit(f"No free port between {start} and {start + 49}")
 
 
 def remote_hint(host, port):
@@ -247,10 +247,10 @@ def remote_hint(host, port):
         ts = out.stdout.split()[0] if out.returncode == 0 and out.stdout.split() else ""
     except (OSError, subprocess.SubprocessError):
         pass
-    lines = ["這是遠端連線：你的瀏覽器開不到這台機器的 127.0.0.1。"]
+    lines = ["This is a remote connection: your browser cannot reach 127.0.0.1 of this machine."]
     if ts:
-        lines.append(f"  只給自己的 Tailscale 裝置看：加上 --host {ts}，網址會是 http://{ts}:{port}/")
-    lines.append(f"  或在自己的電腦轉接：ssh -L {port}:127.0.0.1:{port} <帳號>@<這台機器>")
+        lines.append(f"  To show it only to your own Tailscale devices, add --host {ts}; the address will be http://{ts}:{port}/")
+    lines.append(f"  Or forward the port from your own computer: ssh -L {port}:127.0.0.1:{port} <user>@<this machine>")
     return "\n".join(lines)
 
 
@@ -266,7 +266,7 @@ def main():
     server = http.server.ThreadingHTTPServer((args.host, port),
                                              functools.partial(Handler, directory=str(TOPIC)))
     url = f"http://{args.host}:{port}/studio/lab.html"
-    print(f"實驗頁：{url}\n閱讀頁：http://{args.host}:{port}/index.html\n按 Ctrl+C 停止", flush=True)
+    print(f"Lab page: {url}\nReading page: http://{args.host}:{port}/index.html\nPress Ctrl+C to stop", flush=True)
     hint = remote_hint(args.host, port)
     if hint:
         print(hint, flush=True)
@@ -278,12 +278,12 @@ def main():
         pass
     finally:
         server.server_close()
-        print("已停止")
+        print("Stopped")
 
 
 # ============================== LABS ==============================
 # Replace the example below with the labs confirmed in Step 0. Page text (titles, labels, summaries,
-# notes) is written in Traditional Chinese as used in Taiwan. When the project already has a backend,
+# notes) is written in English. When the project already has a backend,
 # a lab calls it with remote(...) instead of copying its code.
 
 import math
@@ -310,45 +310,45 @@ def _rmse(a, b):
     return math.sqrt(sum((p - q) ** 2 for p, q in zip(a, b)) / len(a))
 
 
-@lab("example", title="範例：去除雜訊時保留邊緣",
-     question="中位數濾波能保留階梯邊緣，移動平均則會把它抹平（範本範例，正式執行時換掉）。",
-     source="範本範例",
-     params=[{"key": "sample", "label": "樣本", "type": "sample", "value": 1,
-              "options": [{"value": s, "label": f"訊號 {s}"} for s in range(1, 6)]},
-             {"key": "noise", "label": "雜訊強度", "type": "range", "min": 0.05, "max": 0.8, "step": 0.05,
-              "value": 0.2, "help": "加入的雜訊的標準差"},
-             {"key": "window", "label": "視窗長度", "type": "range", "min": 3, "max": 31, "step": 2, "value": 9}],
+@lab("example", title="Example: keeping edges while removing noise",
+     question="A median filter keeps step edges, while a moving average smears them (template example; replace it in a real run).",
+     source="Template example",
+     params=[{"key": "sample", "label": "Sample", "type": "sample", "value": 1,
+              "options": [{"value": s, "label": f"Signal {s}"} for s in range(1, 6)]},
+             {"key": "noise", "label": "Noise level", "type": "range", "min": 0.05, "max": 0.8, "step": 0.05,
+              "value": 0.2, "help": "Standard deviation of the added noise"},
+             {"key": "window", "label": "Window length", "type": "range", "min": 3, "max": 31, "step": 2, "value": 9}],
      knowledge=())
 def example(p):
     clean, noisy = _signal(p["sample"], p["noise"])
     ma, md = _moving_average(noisy, p["window"]), _median(noisy, p["window"])
     e_ma, e_md = _rmse(ma, clean), _rmse(md, clean)
     x = list(range(len(clean)))
-    better = "中位數濾波" if e_md < e_ma else "移動平均"
-    failures = [{"title": f"訊號 {s}", "detail": "這裡移動平均比較好", "sample": s}
+    better = "The median filter" if e_md < e_ma else "The moving average"
+    failures = [{"title": f"Signal {s}", "detail": "The moving average is better here", "sample": s}
                 for s in range(1, 6)
                 if _rmse(_moving_average(_signal(s, p["noise"])[1], p["window"]), _signal(s, p["noise"])[0])
                 < _rmse(_median(_signal(s, p["noise"])[1], p["window"]), _signal(s, p["noise"])[0])]
     return {
-        "summary": f"在訊號 {p['sample']} 上，{better}比較接近乾淨訊號"
-                   f"（RMSE {min(e_ma, e_md):.3f} 對 {max(e_ma, e_md):.3f}）。",
-        "input": {"title": "含雜訊的輸入與乾淨訊號",
-                  "plot": {"title": "輸入", "xlabel": "樣本索引", "ylabel": "數值",
-                           "series": [{"name": "含雜訊", "x": x, "y": noisy}, {"name": "乾淨", "x": x, "y": clean, "dashed": True}]}},
+        "summary": f"On signal {p['sample']}, {better} is closer to the clean signal"
+                   f" (RMSE {min(e_ma, e_md):.3f} vs {max(e_ma, e_md):.3f}).",
+        "input": {"title": "Noisy input and clean signal",
+                  "plot": {"title": "Input", "xlabel": "Sample index", "ylabel": "Value",
+                           "series": [{"name": "Noisy", "x": x, "y": noisy}, {"name": "Clean", "x": x, "y": clean, "dashed": True}]}},
         "methods": [
-            {"name": "移動平均", "kind": "traditional",
+            {"name": "Moving average", "kind": "traditional",
              "metric": {"label": "RMSE", "value": round(e_ma, 4), "better": "lower"},
-             "plot": {"title": "移動平均", "series": [{"name": "輸出", "x": x, "y": ma}, {"name": "乾淨", "x": x, "y": clean, "dashed": True}]}},
-            {"name": "中位數濾波", "kind": "paper",
+             "plot": {"title": "Moving average", "series": [{"name": "Output", "x": x, "y": ma}, {"name": "Clean", "x": x, "y": clean, "dashed": True}]}},
+            {"name": "Median filter", "kind": "paper",
              "metric": {"label": "RMSE", "value": round(e_md, 4), "better": "lower"},
-             "plot": {"title": "中位數濾波", "series": [{"name": "輸出", "x": x, "y": md}, {"name": "乾淨", "x": x, "y": clean, "dashed": True}]}},
+             "plot": {"title": "Median filter", "series": [{"name": "Output", "x": x, "y": md}, {"name": "Clean", "x": x, "y": clean, "dashed": True}]}},
         ],
         "failures": failures,
-        "note": "程式產生的訊號；這個範例只示範實驗的回傳格式。",
+        "note": "Signals generated by code; this example only shows the return format of a lab.",
     }
 
 
-@check("[1, 2, 3] 以視窗 3 做移動平均，中間值 = 2")
+@check("Moving average of [1, 2, 3] with window 3: middle value = 2")
 def _check_ma():
     return 2.0, _moving_average([1.0, 2.0, 3.0], 3)[1], 1e-9
 

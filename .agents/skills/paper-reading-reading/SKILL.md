@@ -30,22 +30,22 @@ Every part links to the others: a card states the point, its chapter explains it
 - **The page opens without jargon**: the six cards, each heading one sentence in everyday words.
 - **The reader scans; write for that.** Most web readers scan rather than read word by word (Nielsen Norman Group: 79% scan, 16% read word by word) and plain-language guidance splits sentences over 25 English words and keeps paragraphs to 5 sentences (GOV.UK). So:
   - **Each thing is said once.** The cards, the chapter text and the knowledge points do not repeat each other; there is no separate summary. A knowledge point may restate in one sentence the chapter point it deepens, then goes further.
-  - **Length limits**, checked by `check_page.py`: the six cards together at most 450 words (900 characters on a Chinese page); a chapter at most 3 paragraphs of its own, plus at most 1 figure and 1 table, before its knowledge points; a paragraph at most 5 sentences; a sentence at most 25 words (40 characters on a Chinese page); a knowledge-point field at most 2 sentences.
+  - **Length limits**, checked by `check_page.py`: the six cards together at most 450 words; a chapter at most 3 paragraphs of its own, plus at most 1 figure and 1 table, before its knowledge points; a paragraph at most 5 sentences; a sentence at most 25 words; a knowledge-point field at most 2 sentences.
   - **The first sentence of every card, chapter and field is its conclusion**; what follows supports it. Each chapter opens with that sentence as its `.chapter-lead`.
   - **The text must make sense without touching a demo**; the demo lets the reader check it (Victor, "Explorable Explanations"; Hohman et al. 2020).
   - **Cut what does not serve the paper**: history of a name, side facts, a second example of the same point.
 
 ## Output language and wording
 
-**The page is in English** (`<html lang="en">`), the whole page in one language, including the six card names. Make it Chinese only when the user asks; then set `<html lang="zh-Hant">`, write Traditional Chinese as used in Taiwan with Taiwanese terminology (影片 not 視頻, 資料 not 數據, 品質 not 質量, 資訊 not 信息, 預設 not 默認, 程式碼 not 代碼, 模組 not 模塊, 網路 not 網絡, 支援 not 支持, 檔案 not 文件), and keep the six card names in English. The widgets follow the page's `lang` for their buttons. Paper notes and chat replies to the user are in Traditional Chinese (Taiwan).
+**Everything this skill produces is in English**: the page (`<html lang="en">`, the whole page in one language, including the six card names), the paper notes, the check tables, the lab pages and the cold read files. The widgets follow the page's `lang` for their buttons. Only the conversation with the user in chat (replies, questions, the final reply) is in Traditional Chinese (Taiwan).
 
-Wording, on every page, because a reader who is new to the field must follow it on first reading:
+Wording, on every page and in every note, because a reader who is new to the field must follow it on first reading:
 
 - **Conclusion first.** The first sentence says what matters; the rest supports it. Complete sentences with a clear subject and verb; no filler, slogans or padding. If a passage can be cut without losing the point, cut it.
 - **A concrete example with real numbers before the rule.** Show the idea on one case the reader can check (for SAM: a background point A = [100, 50], a darker normal spot B = 0.5·A and a dent C = [60, 90]; the distance calls B a defect, the angle does not), then state the general rule. The numbers in the example must be the ones the demo computes.
 - **Say what a word refers to.** A word that has a special meaning here (for example "background": the normal metal surface around the defect) is explained in one plain sentence where it first appears. A range or unit gets its meaning (for example "380 to 750 nm, the wavelengths the human eye can see").
 - **One name per thing.** Once a thing has a name, use that name everywhere on the page; do not switch between synonyms.
-- **No names the page makes up and no compressed coined words.** Use the paper's term or the standard term of the field, so a reader can look it up ("spectrum", not "brightness string"). Sentences such as "we call this …", "this page calls …", 「本頁稱為……」 or 「我們稱它……」 fail `check_page.py`.
+- **No names the page makes up and no compressed coined words.** Use the paper's term or the standard term of the field, so a reader can look it up ("spectrum", not "brightness string"). Sentences such as "we call this …" or "this page calls …" fail `check_page.py`.
 - **Cite papers by author and year** (for example Wang et al. 2017), linked to their note. Short ids such as `wang17` are file names only and never appear in the text.
 - **Sources stay out of the sentences.** A card or chapter block ends with one grey line, `<p class="src">In the paper: Table III (p.5); our computation: knowledge point 7</p>`; a knowledge point keeps its sources in its `.src` line under the title; when one number needs its own location, a small `<span class="cite">p.5</span>` after the sentence. Brackets such as "(Section III.A, p.3)" inside a sentence fail `check_page.py`.
 - Use Arabic numerals.
@@ -67,7 +67,7 @@ Complete the following 6 stages in order. **Do not start stage 1 until the user 
 
 ## Report requirements
 
-These come from the lab's review of how a paper must be reported (see [references/sources.md](references/sources.md)). They define what the user needs. Every run meets all of them, and the page's backup material ends with a Report requirements table: one row per requirement, a link to where the page meets it, and Met or Not met. The final reply repeats that table (符合 / 不符合). A requirement that is not met is reported as not met, never glossed over.
+These come from the lab's review of how a paper must be reported (see [references/sources.md](references/sources.md)). They define what the user needs. Every run meets all of them, and the page's backup material ends with a Report requirements table: one row per requirement, a link to where the page meets it, and Met or Not met. The final reply repeats that table (Met / Not met). A requirement that is not met is reported as not met, never glossed over.
 
 | # | Requirement (review point) | Met when |
 |---|---|---|
@@ -82,16 +82,16 @@ These come from the lab's review of how a paper must be reported (see [reference
 | 9 | The page shows understanding, not open questions | The page contains confirmed content only (see "What the page shows") |
 | 10 | Formulas: each after an example; the full set on demand | Every formula a knowledge point uses is a live card after that point's demo (the user asked for more formulas, all interactive, in place of the review's 1 to 5), with a plain sentence whose coloured words match the formula's coloured terms; no display formula in the cards or chapter text; every formula of the paper, the formula map and the symbol table in the appendix at the end |
 | 11 | Written for a reader who knows nothing about the field | Every term is in the term list and explained at its first use, capitalised jargon in the cards and chapter leads is all listed, and the cold read's reader understood the paper correctly and every item it marked as blocking is fixed (`check_page.py`) |
-| 12 | Short enough to read; no noise | Each thing is said once; the cards, paragraphs, sentences and knowledge-point fields are within their limits; no source inside a sentence; no made-up names; the cold read's 可以刪掉 items are fixed where one sentence does it, and the rest are listed in the final reply (`check_page.py`) |
+| 12 | Short enough to read; no noise | Each thing is said once; the cards, paragraphs, sentences and knowledge-point fields are within their limits; no source inside a sentence; no made-up names; the cold read's "Can be cut" items are fixed where one sentence does it, and the rest are listed in the final reply (`check_page.py`) |
 | 13 | One structure: six cards, a chapter under each | The page opens with the six cards in order (Problem, Before, This paper, Result, Weak spots, Next steps), each linking to its chapter, and every knowledge point sits inside the chapter of the card it serves (`check_page.py`) |
 
 ## What the page shows
 
 The page teaches the paper; it is not a list of open questions. Weak spots and Next steps are part of that teaching, and like the rest they hold confirmed content only.
 
-- **Confirmed content only.** On `index.html` every statement is either reported by a paper or computed in this run, and the block's source line says which (In the paper: … with location; our computation: … with the knowledge point). The labels 原論文報告 and 本次實際重現 are for the notes and the check tables, not for the prose. The label 待驗證的推論 and the words "not yet confirmed", "to be verified", "unverified", 尚未確認, 待驗證 and 還沒確認 do not appear on the page; `check_page.py` fails the page if they do.
+- **Confirmed content only.** On `index.html` every statement is either reported by a paper or computed in this run, and the block's source line says which (In the paper: … with location; our computation: … with the knowledge point). The labels "Reported by the paper" and "Computed in this run" are for the notes and the check tables, not for the prose. The label "Unverified inference" and the words "not yet confirmed", "to be verified" and "unverified" do not appear on the page; `check_page.py` fails the page if they do.
 - **Check what can be checked, during the run.** When a question can be settled by reading the paper again, its arXiv or supplementary version, the official code, a cited paper, or by recomputing, settle it and write the answer. Do not hand it to the reader.
-- **What cannot be settled goes into the notes.** Open questions, suspected typos and interpretations stay in `papers/<short>.md` under 我的判讀, with their label. They do not appear on the page.
+- **What cannot be settled goes into the notes.** Open questions, suspected typos and interpretations stay in `papers/<short>.md` under "My reading", with their label. They do not appear on the page.
 - **Errors in the paper, when confirmed, go to chapter 5 (Weak spots)**, each stated as a fact with page and section and, as evidence, a crop of the paper's own text with the wrong phrase boxed in red (`scripts/crop_pdf_text.py`, see Stage 5). Confirmed means checked against the paper's text, its tables or a recomputation; a suspicion stays in the notes. Where a reader needs an error to read a result correctly, the knowledge point says so too and links to it.
 - **Next steps are sourced.** Chapter 6 names what the authors published next and where the field went, each with its paper; the user's own ideas appear only when the user supplied them.
 
@@ -112,9 +112,9 @@ Every claim in the notes carries one of these 3 labels, written exactly like thi
 
 | Label | Meaning |
 |---|---|
-| 原論文報告 | A number, result or claim the paper itself reports, with page, section, Figure, Table or theorem |
-| 本次實際重現 | A result produced by code in this run (demo computation or reproduction experiment), with input, parameters and code location |
-| 待驗證的推論 | The reader's interpretation or expectation, not yet supported by evidence. Used in notes only, never on the page |
+| Reported by the paper | A number, result or claim the paper itself reports, with page, section, Figure, Table or theorem |
+| Computed in this run | A result produced by code in this run (demo computation or reproduction experiment), with input, parameters and code location |
+| Unverified inference | The reader's interpretation or expectation, not yet supported by evidence. Used in notes only, never on the page |
 
 - **Observing a failure does not mean the cause is known.** Keep the phenomenon and the cause separate; state a cause as confirmed only when the paper's analysis or an experiment supports it.
 - **Numbers from different test conditions cannot be ranked directly.** When data splits, model size, training data, evaluation rules or cost differ, describe the conditions under which each number holds.
@@ -126,7 +126,7 @@ Every claim in the notes carries one of these 3 labels, written exactly like thi
 
 1. **Extract.** `<skill>` is the directory containing this `SKILL.md`. For one paper run `python <skill>/scripts/extract_figures.py <paper.pdf> <topic>/_work/extract/<short>/`; for a batch write a list (`<short><TAB><arXiv id, PDF URL or local path>` per line) and run `python <skill>/scripts/fetch_papers.py <list.tsv> <topic>`, which downloads and extracts every paper in one command and reports the ones it could not get. Each paper gets `text.txt` (the whole text layer, with page markers), `sections.tsv` (headings with their line numbers), one `fig<N>.png` per captioned figure (a reading copy with its caption, for looking at the figure), one `fig<N>-real.*` per figure (the figure itself as the paper holds it: the original embedded bitmap at its own resolution, or the vector drawing cropped to SVG), and `figures.tsv`. PyMuPDF is the only requirement; if `python -c "import fitz"` fails, ask the user to approve installing it into `<topic>/_work/.venv/` (`pip install --no-cache-dir pymupdf`, about 20 MB), and do not continue until it is installed.
 2. **Read the whole text** of `text.txt` in order, and follow the line of argument section by section: what each section sets up, which figure or table carries it, and how it leads into the next.
-3. **Tables and numbers from the text.** Keep original precision. If the text layer leaves unclear which number belongs to which row or column, write 尚未確認 for those cells in the note instead of guessing, and settle them before the page uses them.
+3. **Tables and numbers from the text.** Keep original precision. If the text layer leaves unclear which number belongs to which row or column, write "not yet confirmed" for those cells in the note instead of guessing, and settle them before the page uses them.
 4. **Equations from the text.** Only if an equation is garbled beyond reading, crop that one equation from its page (`page.get_pixmap(clip=rect, dpi=150)`) and look at the crop.
 5. **Figures in context.** Open each `fig<N>.png` together with its caption, the paragraphs that cite it ("as shown in Fig. 3") and its section. Record what it shows, which claim it supports, and whether the text's claim matches what the figure shows. Numbers read off a plot are approximate and marked as such. A figure listed as `not found` in `figures.tsv` is cropped from its page by hand; only that crop is viewed.
 6. **Which figures.** For the user's paper, every figure. For other papers, only the figures their note cites, usually 0 to 2.
@@ -168,7 +168,7 @@ Do not ask for the reading purpose. If the user did not state it, identify the p
 - **Look for local copies first.** Before calling a paper unobtainable, search the folder the user's paper came from (and any folder the user named) by title, author or year; use what is there and do not copy it elsewhere.
 - **Check each file name against the paper.** A local file's name often carries an author and a year; compare them with the title page of the PDF and report every mismatch (wrong author, wrong year, wrong paper) in the stage 1 summary. Notes use the paper's own details, never the file name's.
 - Confirm each paper's full title, authors and version, and prefer the original text. Surveys and secondary write-ups can help locate things, but key methods, numbers and conclusions must be checked against the original paper.
-- Mark each paper 已讀全文, 已讀相關段落 (list the sections read), 部分閱讀 (abstract or less, or a cited figure not viewed) or 待讀 in its note; the page's table shows the same as full text, relevant sections, partly read. Anything not obtained is marked 尚未確認 in the note.
+- Mark each paper "full text", "relevant sections" (list the sections read), "partly read" (abstract or less, or a cited figure not viewed) or "to read" in its note; the page's table shows the same words. Anything not obtained is marked "not yet confirmed" in the note.
 - If fewer than 20–30 related papers exist, state the actual count and the reason; do not claim the expected scale was reached.
 - A problem already addressed by later work must not be described as unsolved.
 
@@ -176,7 +176,7 @@ Do not ask for the reading purpose. If the user did not state it, identify the p
 
 - **Open with one concrete failure, then an everyday example.** First a real case from the paper or its cluster: what was expected, what actually happened, and the effect, with its source (for LUNA: the model answers that water vapour is denser than air, Fig. 4). Then a technology or phenomenon from everyday life that shows why the problem is hard; for audio normalization, for example, recording and Dolby noise reduction: why signal-to-noise ratio (SNR) and dynamic range are hard to handle. The audience needs a picture first; only then can they follow the method.
 - **Explain the traditional approach in great detail, and run it.** How it works, what it solves, and where it falls short are prerequisites for understanding the paper. Papers usually assume the reader already knows this and start from the later part; the report must put it back. The traditional approaches the paper improves on or competes with become knowledge points marked `data-traditional="1"`, placed before the paper's method, and their demos run on the same data as the paper's method so the two can be compared side by side, including the settings where the traditional approach does as well or better.
-- **Difficulties need a situation and a source.** Record under which conditions which problem appears, its effect, and the location in the paper or demo. A shortcoming the authors state in the Introduction without supporting evidence is written on the page as the authors' statement (「作者指出……」, with the location in the source line); never invent a failure.
+- **Difficulties need a situation and a source.** Record under which conditions which problem appears, its effect, and the location in the paper or demo. A shortcoming the authors state in the Introduction without supporting evidence is written on the page as the authors' statement ("The authors state …", with the location in the source line); never invent a failure.
 - **A failure measured in this run counts as evidence.** When the traditional approach or the paper's method is run on real data and fails (for example an estimate that comes out 11% to 31% low), the failure is written on the page as our computation, with the dataset, the files or sample count, the settings and the knowledge point in the source line. On generated data it is stated as generated data, and it shows how the method behaves, not how it behaves on the real task.
 
 ## Stage 3: knowledge-point map
@@ -231,7 +231,7 @@ All knowledge points live on one page and share one widget library. The page, th
 
 **Where the computation runs.** In the browser. Computation that needs Python packages, a model or large data belongs to the labs of $paper-reading-presentation (stage 0, item 6), not to this page.
 
-**Acceptance.** Run `python <skill>/scripts/check_page.py <topic>`. It opens the page in the Chrome, Edge or Chromium already on the machine, moves every control of every demo and of every live formula card and confirms the output changes, steps through every formula animation, runs every `PR.check`, opens every figure, and prints one line per knowledge point (通過 / 未通過 / 無示範). The page as a whole fails when the structure breaks (not six cards in the fixed order, a card without its chapter, a chapter without its lead sentence, chapters 1 to 4 without knowledge points, a knowledge point outside every chapter), when the formula layer is incomplete (no formula map, a box linking nowhere, a formula section missing from the map, an empty symbol table, a formula KaTeX could not typeset), when a formula card breaks its rules (none, before its demo, without a plain sentence whose coloured words match the formula, not live, or a control that does not change the substituted line), when a display formula appears outside the knowledge points and the appendix, when the formula map is not in the appendix, when a listed term is used before it is explained or capitalised jargon in the cards and chapter leads is not listed, when the cold read is missing, has a blocking item not marked fixed, or lacks the writer's 理解檢查 that the reader understood correctly, when a figure is a screenshot (other than a Weak spots text crop) or does not open, when no knowledge point runs a traditional approach, when a map entry has no section, when unconfirmed wording appears, or when the reading load is over its limits (the cards over 450 words, a paragraph over 5 sentences, a sentence over 25 words, a knowledge-point field over 2 sentences, a source inside a sentence, a name the page made up; Chinese pages: 900 and 40 characters). It also writes `_work/verify/reading_text.txt` for the cold read: run it as [references/cold-read.md](references/cold-read.md) describes, check the reader's 3-sentence understanding against the paper, fix and mark every [阻斷] item, fix the others when one sentence does it; run it again only when the understanding was wrong or the cards or chapters were rewritten (at most 3 rounds, then report what remains). Fix what fails and run it again. Copy its lines into the checks table, then fill the Report requirements table.
+**Acceptance.** Run `python <skill>/scripts/check_page.py <topic>`. It opens the page in the Chrome, Edge or Chromium already on the machine, moves every control of every demo and of every live formula card and confirms the output changes, steps through every formula animation, runs every `PR.check`, opens every figure, and prints one line per knowledge point (Pass / Fail / No demo). The page as a whole fails when the structure breaks (not six cards in the fixed order, a card without its chapter, a chapter without its lead sentence, chapters 1 to 4 without knowledge points, a knowledge point outside every chapter), when the formula layer is incomplete (no formula map, a box linking nowhere, a formula section missing from the map, an empty symbol table, a formula KaTeX could not typeset), when a formula card breaks its rules (none, before its demo, without a plain sentence whose coloured words match the formula, not live, or a control that does not change the substituted line), when a display formula appears outside the knowledge points and the appendix, when the formula map is not in the appendix, when a listed term is used before it is explained or capitalised jargon in the cards and chapter leads is not listed, when the cold read is missing, has a blocking item not marked fixed, or lacks the writer's "Understanding check" confirming that the reader understood correctly, when a figure is a screenshot (other than a Weak spots text crop) or does not open, when no knowledge point runs a traditional approach, when a map entry has no section, when unconfirmed wording appears, or when the reading load is over its limits (the cards over 450 words, a paragraph over 5 sentences, a sentence over 25 words, a knowledge-point field over 2 sentences, a source inside a sentence, a name the page made up). It also writes `_work/verify/reading_text.txt` for the cold read: run it as [references/cold-read.md](references/cold-read.md) describes, check the reader's 3-sentence understanding against the paper, fix and mark every [blocking] item, fix the others when one sentence does it; run it again only when the understanding was wrong or the cards or chapters were rewritten (at most 3 rounds, then report what remains). Fix what fails and run it again. Copy its lines into the checks table, then fill the Report requirements table.
 
 **Checking the drawing by hand.** `check_page.py` proves that controls change the output, not that the output can be read. After building or changing a demo, operate every control at its defaults and its extremes and confirm by values (positions of labels and boxes, read with the browser): no label, value or legend overlaps another or leaves the drawing; nothing goes outside the page width; a number that looks like a bug on screen (for example 100% false alarms, or 0% found) is either fixed or explained in the result line with its cause in the data (for example an overexposed photo). Check the desktop width only; phone width is not a target unless the user asks.
 
@@ -260,11 +260,11 @@ There is no section of open questions; see "What the page shows".
 
 `index.html` is the acceptance page and the page the user presents from. From it the user must be able to see, without opening other files, the six cards and their chapters, and in the backup material:
 
-1. **Paper groups**: one heading row per group naming the chapter it supports, then one row per paper with its role, the difficulty it addresses, its core design, its evidence (with source location), what it leaves unsolved, and how much was read (已讀全文 / 已讀相關段落 / 部分閱讀 / 待讀).
+1. **Paper groups**: one heading row per group naming the chapter it supports, then one row per paper with its role, the difficulty it addresses, its core design, its evidence (with source location), what it leaves unsolved, and how much was read (full text / relevant sections / partly read / to read).
 2. **Formulas**: a live card for every formula inside its knowledge point, and in the appendix the formula map, the symbol table and every formula typeset with its location.
 3. **Complete knowledge-point map**: every point, grouped by chapter and numbered in reading order, with its source location and a link to its section.
 4. **Interactive material**: each knowledge-point section with its demo.
-5. **Item-by-item check results**: one row per knowledge point with the controls that were operated, whether its formula animation steps, the hand calculation or reference it was checked against, the result (通過 / 未通過 / 未驗收), and any limitation. Totals alone ("279 controls passed") are not enough; each point must be traceable to its own row.
+5. **Item-by-item check results**: one row per knowledge point with the controls that were operated, whether its formula animation steps, the hand calculation or reference it was checked against, the result (Pass / Fail / Not checked), and any limitation. Totals alone ("279 controls passed") are not enough; each point must be traceable to its own row.
 6. **Report requirements**: the Report requirements table from "Report requirements", one row per requirement with a link to where the page meets it.
 
 ## Output location
@@ -295,7 +295,7 @@ Never write to an Obsidian vault unless the user explicitly asks. The output fol
 **When done, open the result for the user; do not leave it for them to open.**
 
 1. Start `python <topic>/serve.py` in the background: it serves the folder at `http://127.0.0.1:<port>/index.html` (standard library only, a free port from 8000) and opens it in the user's default browser. The reply gives the address, the port, how to stop it and the command that starts it again. **In a remote session** (`SSH_CONNECTION` is set, or the user works through VS Code Remote) the user's browser cannot open this machine's 127.0.0.1, so do not hand over that address alone: when `tailscale ip -4` gives an address, start with `--host <that address>` (reachable only from the user's own Tailscale devices) and give `http://<address>:<port>/index.html`; otherwise give the one-line `ssh -L <port>:127.0.0.1:<port> …` forwarding. `serve.py` prints this hint itself. Opening the service to a whole network is asked first, like any port. If it cannot start, open `index.html` directly (Windows: `Start-Process "<path>\index.html"`; macOS: `open`; Linux: `xdg-open`); the page also works as a file.
-2. Start the final reply with clickable markdown links: `index.html`, then the note on the user's paper. Do not give plain-text paths only. Then give the 報告要求對照 table (requirement, where on the page, 符合 / 不符合), so the user can see what was delivered against each requirement without searching the page.
+2. Start the final reply with clickable markdown links: `index.html`, then the note on the user's paper. Do not give plain-text paths only. Then give the Report requirements table (requirement, where on the page, Met / Not met), so the user can see what was delivered against each requirement without searching the page.
 3. If the browser cannot be opened (for example a remote session without a desktop), say why, and still give the links.
 
 Before writing a paper note, check by full title or DOI/arXiv id whether it already exists; if it does, update it and keep any comments the user wrote.
@@ -349,7 +349,7 @@ Only when the user asks to verify the paper's experimental results; never the de
 
 Check 5 aspects: explanation of results, comparison with other work, significance, limitations, future work. Then ask:
 
-1. Why might the result have occurred? Which explanations have evidence, and which are 待驗證的推論?
+1. Why might the result have occurred? Which explanations have evidence, and which are unverified inferences?
 2. Compared with prior methods in the cluster, which difficulty or gap does it improve? Are the comparison conditions compatible?
 3. What remains unsolved? What does it suggest for follow-up work, and which verification is still needed?
 
@@ -357,72 +357,72 @@ Point to the specific missing argument, paragraph or evidence. When checking a d
 
 ### Finding open-source code
 
-Search in this order: the paper itself and its arXiv/OpenReview page, the conference site, the authors' or lab's pages, then GitHub keywords and Awesome lists. Report the repository link, whether it is the official implementation, the star count at query time, and the last update. If nothing is found, write 未找到; if it cannot be verified, write 尚未確認. Never substitute a similarly named repository.
+Search in this order: the paper itself and its arXiv/OpenReview page, the conference site, the authors' or lab's pages, then GitHub keywords and Awesome lists. Report the repository link, whether it is the official implementation, the star count at query time, and the last update. If nothing is found, write "not found"; if it cannot be verified, write "not yet confirmed". Never substitute a similarly named repository.
 
 ## Per-paper note template
 
-Field names and content are in Traditional Chinese:
+The note is written in English:
 
 ```markdown
 ---
-title: "<論文完整標題>"
-簡稱: "<方法名或第一作者年份>"
-年份: <yyyy>
-出處: "<會議、期刊或 arXiv；尚未確認時註明>"
-用途: <核心／支撐／背景／待讀／未分類>
-狀態: <已讀全文／已讀相關段落／部分閱讀／待讀>
-連結: "<原文網址或 DOI>"
-程式碼: "<已確認網址／尚未查找／未找到／尚未確認>"
-讀取日期: <yyyy-mm-dd>
+title: "<full paper title>"
+short: "<method name or first author and year>"
+year: <yyyy>
+venue: "<conference, journal or arXiv; say so when not yet confirmed>"
+role: <core / supporting / background / to read / unclassified>
+status: <full text / relevant sections / partly read / to read>
+link: "<URL of the paper or DOI>"
+code: "<confirmed URL / not yet searched / not found / not yet confirmed>"
+read_on: <yyyy-mm-dd>
 ---
 
-# <簡稱>
+# <short>
 
-**閱讀紀錄**：<全文是否讀完；看過的圖／有圖說的圖，例如 20/20：Fig. 1 p.2、Fig. 2 p.3；從文字讀的表格，例如 Table 1 p.7；需要裁切的公式>
-**閱讀範圍**：<版本、全文或已讀章節；補充材料是否已讀>
-**論文群中的角色**：<針對哪個困難，如何承接或對比相關論文；附連結>
+**Reading log**: <whether the full text was read; figures viewed out of captioned figures, for example 20/20: Fig. 1 p.2, Fig. 2 p.3; tables read from text, for example Table 1 p.7; equations that had to be cropped>
+**Reading scope**: <version, full text or sections read; whether supplementary material was read>
+**Role in the paper group**: <which difficulty it addresses, how it builds on or contrasts with related papers; with links>
 
-## 困難點與研究動機
-<既有作法不足的情境、證據與影響；現象與原因分開>
+## Difficulty and motivation
+<the situations where existing approaches fall short, the evidence and the effect; phenomenon and cause kept apart>
 
-## 核心想法與方法
-<改善哪個問題、採取什麼設計、為什麼；輸入、關鍵步驟與輸出>
+## Core idea and method
+<which problem it improves, what design it takes and why; input, key steps and output>
 
-## 論證脈絡
-<逐節說明：每一節要建立什麼、由哪張圖或表支撐、如何接到下一節>
+## Line of argument
+<section by section: what each section sets up, which figure or table carries it, how it leads into the next>
 
-## 圖表（逐一，含上下文）
-### <Fig./Table 編號>（p.<頁>）
-- 呈現什麼：<圖：從抽出的圖片讀到的內容；表格：從文字層讀到的內容>
-- 上下文：<圖說，以及引用它的段落與章節>
-- 支持的主張：<正文說它證明什麼；圖表實際是否支持>
+## Figures and tables (each, in context)
+### <Fig./Table number> (p.<page>)
+- What it shows: <figure: what was read from the extracted image; table: what was read from the text layer>
+- Context: <the caption, and the paragraph and section that cite it>
+- Claim it supports: <what the text says it proves; whether the figure or table actually supports it>
 
-## 證據
-### <要檢驗的主張>（<章節、頁碼、圖表或定理>）
-- 標籤：<原論文報告／本次實際重現／待驗證的推論>
-- 如何檢驗：<比較對象、資料與重要條件>
-- 結果：<原始數字與單位；自行計算的差值要標明>
-- 可以支持什麼：<改善程度、適用範圍、與其他論文是否可比>
+## Evidence
+### <claim to check> (<section, page, figure, table or theorem>)
+- Label: <Reported by the paper / Computed in this run / Unverified inference>
+- How it was checked: <what is compared, the data and the important conditions>
+- Result: <original numbers and units; differences computed by us are marked>
+- What it supports: <size of the improvement, range of validity, whether it is comparable with other papers>
 
-## 解決的部分與剩餘問題
-**作者明列的局限**：
-> <短引原句及出處；未讀相關內容時寫「尚未確認」>
+## What is solved and what remains
+**Limits the authors state**:
+> <short quotation with its location; write "not yet confirmed" when the relevant text was not read>
 
-**我的判讀**：<有證據的疑問，以及待驗證的推論>
+**My reading**: <doubts that have evidence, and unverified inferences>
 
-## 對應的知識點與互動單元
-<本篇涉及的知識點編號，以及單元檔案位置>
+## Knowledge points and demos
+<the numbers of the knowledge points this paper touches, and where the demo files are>
 ```
 
 ## Hard rules
 
-**No plausible-sounding filler.** Every statement about the user's paper cites where in the paper it comes from (page, section, figure, table or equation). General knowledge is labelled as background and never attributed to the paper. If the paper does not say something, write 原文未說明 instead of supplying a reasonable-sounding answer. Content that is correct but does not help understand the user's paper is cut: it pulls the reader off topic.
+**No plausible-sounding filler.** Every statement about the user's paper cites where in the paper it comes from (page, section, figure, table or equation). General knowledge is labelled as background and never attributed to the paper. If the paper does not say something, write "not stated in the paper" instead of supplying a reasonable-sounding answer. Content that is correct but does not help understand the user's paper is cut: it pulls the reader off topic.
 
-**Numbers are traceable.** Keep original precision, units, dataset, metric and comparison target, with the source location. Distinguish relative percentages from percentage points. In notes, write 尚未確認 when not read; write 原文未列 only after confirming the paper does not list it. On the page, a number that was not read is not used.
+**Numbers are traceable.** Keep original precision, units, dataset, metric and comparison target, with the source location. Distinguish relative percentages from percentage points. In notes, write "not yet confirmed" when not read; write "not listed in the paper" only after confirming the paper does not list it. On the page, a number that was not read is not used.
 
 **Conclusions match the strength of the evidence.** Correlation, a comparison result or publication order does not prove causation. When other differences are not controlled, do not attribute the whole improvement to one design.
 
-**Keep the authors' limitations separate from the reader's assessment.** Quote the authors' stated limitations briefly with location; put your own doubts under 我的判讀.
+**Keep the authors' limitations separate from the reader's assessment.** Quote the authors' stated limitations briefly with location; put your own doubts under "My reading".
 
 **Agent work follows the host and user settings.** Delegate only when authorized and available; verify each agent's source claims.
 

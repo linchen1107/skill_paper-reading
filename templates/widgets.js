@@ -3,17 +3,17 @@
  * A demo is declared in demos.js:
  *   PR.demo('3', {
  *     controls: [{key: 'alpha', label: 'α', min: 0, max: 1, step: 0.01, value: 0.8},
- *                {key: 'method', label: '方法', options: ['log', 'PCEN'], value: 'PCEN'},
- *                {key: 'noise', label: '加入雜訊', checkbox: true, value: false}],
+ *                {key: 'method', label: 'Method', options: ['log', 'PCEN'], value: 'PCEN'},
+ *                {key: 'noise', label: 'Add noise', checkbox: true, value: false}],
  *     compute: p => ({
  *       plots: [{title: '...', xlabel: '...', ylabel: '...', type: 'line',   // or 'bar', 'heatmap'
  *                series: [{name: 'log', x: [...], y: [...]}]}],             // heatmap: z: [[...]]
- *       anim: {title: 'Eq. 3 逐步計算',       // the formula animated: play, pause, step
- *              frames: [{label: '第 1 步', expr: 'p(y1) = e^3 / Σ e^l', value: 0.77,
+ *       anim: {title: 'Eq. 3 step by step',       // the formula animated: play, pause, step
+ *              frames: [{label: 'Step 1', expr: 'p(y1) = e^3 / Σ e^l', value: 0.77,
  *                        plot: {...}}]},        // optional plot redrawn at this frame
- *       steps: [['步驟', '代入數值', 0.6]],   // a static table, for results that are not a derivation
- *       table: [['欄 1', '欄 2'], [1, 2]],     // first row is the header
- *       note: '本次實際重現，合成資料'
+ *       steps: [['Step', 'Numbers', 0.6]],   // a static table, for results that are not a derivation
+ *       table: [['Column 1', 'Column 2'], [1, 2]],     // first row is the header
+ *       note: 'Reproduced in this run, synthetic data'
  *     })
  *   });
  * It renders into <div class="demo" id="demo-3"> and recomputes on every change.
@@ -31,14 +31,11 @@
  * a group with data-toc-open starts expanded, and groups inside #appendix are set apart and dimmed.
  *
  * A hand calculation the demo must reproduce:
- *   PR.check('3', 'α = 1 時增益不變', () => ({expected: 0, actual: f(1), tol: 1e-9}));
+ *   PR.check('3', 'gain is unchanged when α = 1', () => ({expected: 0, actual: f(1), tol: 1e-9}));
  */
 (function () {
   'use strict';
   const PR = (window.PR = { demos: {}, checks: [], errors: [] });
-  // interface words follow the page language: <html lang="zh-Hant"> gives Chinese, anything else English
-  const T = (zh, en) => (/^zh/i.test(document.documentElement.lang || '') ? zh : en);
-  PR.T = T;
   const COLORS = ['#60a5fa', '#f87171', '#4ade80', '#c084fc', '#fb923c', '#22d3ee'];
 
   function el(tag, attrs, ...kids) {
@@ -212,7 +209,7 @@
     return [...card.querySelectorAll('.katex [style*="color"]')].filter(n => (n.getAttribute('style') || '').toLowerCase().includes(hex));
   };
   // ---------- Terms: every technical term is explained where it first appears ----------
-  // demos.js lists the page's terms:  PR.terms({'hidden state': '模型讀到每個字時，內部產生的一長串數字。', …});
+  // demos.js lists the page's terms:  PR.terms({'hidden state': 'The long list of numbers the model builds inside as it reads each word.', …});
   // The first use in reading order is written <dfn data-term="hidden state">hidden state</dfn>, with the explanation
   // in the same sentence. Later uses get the explanation on hover (the first later use in each section).
   PR.glossary = {};
@@ -391,10 +388,10 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
 
   // ---------- Formula map: how the formulas connect ----------
   // PR.formulaMap('fmap', {
-  //   lanes: [{id: 'a', label: 'InfoGAN 項'}, ...],                   // rows, top to bottom
-  //   nodes: [{id: 'e1', lane: 'a', col: 0, tag: '(1) · p.3', title: 'GAN 對抗損失', href: '#eq-1',
+  //   lanes: [{id: 'a', label: 'InfoGAN term'}, ...],                   // rows, top to bottom
+  //   nodes: [{id: 'e1', lane: 'a', col: 0, tag: '(1) · p.3', title: 'GAN adversarial loss', href: '#eq-1',
   //            kind: 'base' | 'new' | 'target' | 'algo' | 'chip', span: 2}],   // span: rows a target covers
-  //   edges: [{from: 'e1', to: 'e2', label: '加互資訊', dashed: false, route: 'side' | 'over' | 'under' | 'up' | 'arc'}],
+  //   edges: [{from: 'e1', to: 'e2', label: 'add mutual information', dashed: false, route: 'side' | 'over' | 'under' | 'up' | 'arc'}],
   //   (side: right edge to left edge; over/under: around the lane above/below; up: straight up to the box above;
   //    arc: curved, the default for a dashed proof arrow)
   //   caption: '…'                                                   // one paragraph: the derivation in words
@@ -482,7 +479,7 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
       a.append(el('span', { class: 'toc-name', text: name }));
       if (lvl === 'group') {
         const grp = el('div', { class: 'toc-grp' });
-        const caret = el('button', { type: 'button', class: 'toc-caret', 'aria-label': T('展開或收合', 'Expand or collapse'), text: '▸' });
+        const caret = el('button', { type: 'button', class: 'toc-caret', 'aria-label': 'Expand or collapse', text: '▸' });
         const head = el('div', { class: 'toc-head' }, caret, a);
         sub = el('div', { class: 'toc-sub' });
         caret.addEventListener('click', () => grp.classList.toggle('open'));
@@ -513,13 +510,13 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
     // on a narrow screen the table of contents folds into a bar at the top; this button opens it
     const toc = document.getElementById('toc');
     if (toc && !document.getElementById('toc-toggle')) {
-      const tg = el('button', { id: 'toc-toggle', type: 'button', text: T('☰ 目錄', '☰ Contents') });
+      const tg = el('button', { id: 'toc-toggle', type: 'button', text: '☰ Contents' });
       tg.addEventListener('click', () => toc.classList.toggle('open'));
       toc.prepend(tg);
       toc.addEventListener('click', ev => { if (ev.target.closest('a')) toc.classList.remove('open'); });
     }
     const bar = el('div', { id: 'pr-progress' });
-    const top = el('button', { id: 'pr-top', type: 'button', 'aria-label': T('回到頂端', 'Back to top'), text: '↑' });
+    const top = el('button', { id: 'pr-top', type: 'button', 'aria-label': 'Back to top', text: '↑' });
     top.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
     document.body.append(bar, top);
     const upd = () => {
@@ -565,7 +562,7 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
       else if (location.hash) PR.jump(location.hash, false);
       showBack();
     });
-    const back = el('button', { id: 'pr-back', type: 'button', text: T('↩ 回到剛才的位置', '↩ Back to where you were') });
+    const back = el('button', { id: 'pr-back', type: 'button', text: '↩ Back to where you were' });
     back.addEventListener('click', () => history.back());
     document.body.append(back);
     showBack();
@@ -589,14 +586,14 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
       const nav = el('div', { class: 'kp-nav' });
       const eqs = [...document.querySelectorAll('section.eq-sec[id]')].filter(e => e.querySelector(`a[href="#${k.id}"]`));
       if (eqs.length) {
-        const f = el('span', { class: 'kp-eqs' }, T('完整公式（附錄）：', 'Full formulas (appendix): '));
+        const f = el('span', { class: 'kp-eqs' }, 'Full formulas (appendix): ');
         eqs.forEach(e => f.append(el('a', { href: '#' + e.id, class: 'kp-eq', text: e.dataset.tag || e.id })));
         nav.append(f);
       }
       const tag = x => (x.dataset.kp || x.id.replace(/^kp-/, ''));
       const side = el('span', { class: 'kp-step' });
       if (kps[i - 1]) side.append(el('a', { href: '#' + kps[i - 1].id, text: '← ' + tag(kps[i - 1]) }));
-      if (document.getElementById('map-formulas')) side.append(el('a', { href: '#map-formulas', text: T('公式關係圖', 'Formula map') }));
+      if (document.getElementById('map-formulas')) side.append(el('a', { href: '#map-formulas', text: 'Formula map' }));
       if (kps[i + 1]) side.append(el('a', { href: '#' + kps[i + 1].id, text: tag(kps[i + 1]) + ' →' }));
       nav.append(side);
       const src = k.querySelector('.src');
@@ -638,9 +635,9 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
       const foot = el('div', { class: 'lb-foot' });
       foot.append(el('span', { class: 'lb-pos', text: `${idx + 1} / ${list.length}` }));
       if (cap) foot.append(el('span', { class: 'lb-cap', text: cap.textContent }));
-      foot.append(el('a', { href: src, target: '_blank', rel: 'noopener', class: 'lb-open', text: T('開啟原始檔案', 'Open the original file') }));
-      box.append(btn('lb-close', '×', T('關閉', 'Close'), close), stage, foot);
-      if (list.length > 1) box.append(btn('lb-prev', '‹', T('上一張', 'Previous'), () => show(idx - 1)), btn('lb-next', '›', T('下一張', 'Next'), () => show(idx + 1)));
+      foot.append(el('a', { href: src, target: '_blank', rel: 'noopener', class: 'lb-open', text: 'Open the original file' }));
+      box.append(btn('lb-close', '×', 'Close', close), stage, foot);
+      if (list.length > 1) box.append(btn('lb-prev', '‹', 'Previous', () => show(idx - 1)), btn('lb-next', '›', 'Next', () => show(idx + 1)));
     }
     document.addEventListener('click', ev => {
       const img = ev.target.closest && ev.target.closest('main .figure img, main figure img');
@@ -661,7 +658,7 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
     if (!side || !/^https?:/.test(location.protocol)) return;
     fetch('studio/lab.html', { method: 'HEAD' }).then(r => {
       if (!r.ok || side.querySelector('.toc-lab')) return;
-      const a = el('a', { href: 'studio/lab.html', class: 'toc-lab' }, el('span', { class: 'toc-tag', text: 'LAB' }), el('span', { class: 'toc-name', text: T('真實資料實驗 →', 'Labs on real data →') }));
+      const a = el('a', { href: 'studio/lab.html', class: 'toc-lab' }, el('span', { class: 'toc-tag', text: 'LAB' }), el('span', { class: 'toc-name', text: 'Labs on real data →' }));
       side.prepend(a);
     }).catch(() => {});
   }
@@ -683,10 +680,10 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
     const wrap = el('div', { class: 'anim' });
     if (anim.title) wrap.append(el('div', { class: 'anim-title', text: anim.title }));
     const bar = el('div', { class: 'anim-bar' });
-    const bStart = el('button', { type: 'button', class: 'anim-start', text: T('⏮ 從頭', '⏮ Start') });
-    const bPrev = el('button', { type: 'button', class: 'anim-prev', text: T('◀ 上一步', '◀ Back') });
-    const bPlay = el('button', { type: 'button', class: 'anim-play', text: T('▶ 播放', '▶ Play') });
-    const bNext = el('button', { type: 'button', class: 'anim-next', text: T('下一步 ▶', 'Next ▶') });
+    const bStart = el('button', { type: 'button', class: 'anim-start', text: '⏮ Start' });
+    const bPrev = el('button', { type: 'button', class: 'anim-prev', text: '◀ Back' });
+    const bPlay = el('button', { type: 'button', class: 'anim-play', text: '▶ Play' });
+    const bNext = el('button', { type: 'button', class: 'anim-next', text: 'Next ▶' });
     const pos = el('span', { class: 'anim-pos' });
     bar.append(bStart, bPrev, bPlay, bNext, pos);
     const list = el('ol', { class: 'anim-frames' });
@@ -707,18 +704,18 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
         if (f.value !== undefined) li.append(el('span', { class: 'anim-val', text: '= ' + PR.fmt(f.value) }));
         list.append(li);
       });
-      pos.textContent = T(`第 ${i + 1} / ${F.length} 步`, `Step ${i + 1} of ${F.length}`);
+      pos.textContent = `Step ${i + 1} of ${F.length}`;
       plotBox.innerHTML = '';
       for (let k = i; k >= 0; k--) if (F[k] && F[k].plot) { drawPlot(plotBox, F[k].plot); break; }
     }
-    function stop() { if (d.timer) { clearInterval(d.timer); d.timer = null; } bPlay.textContent = T('▶ 播放', '▶ Play'); }
+    function stop() { if (d.timer) { clearInterval(d.timer); d.timer = null; } bPlay.textContent = '▶ Play'; }
     bStart.addEventListener('click', () => { stop(); i = 0; show(); });
     bPrev.addEventListener('click', () => { stop(); i = Math.max(0, i - 1); show(); });
     bNext.addEventListener('click', () => { stop(); i = Math.min(F.length - 1, i + 1); show(); });
     bPlay.addEventListener('click', () => {
       if (d.timer) { stop(); return; }
       if (i >= F.length - 1) i = 0;
-      show(); bPlay.textContent = T('⏸ 暫停', '⏸ Pause');
+      show(); bPlay.textContent = '⏸ Pause';
       d.timer = setInterval(() => { if (i >= F.length - 1) { stop(); return; } i++; show(); }, anim.interval || 1100);
     });
     show();
@@ -778,12 +775,12 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
           d.out.append(grid);
           r.plots.forEach(p => drawPlot(grid, p));
         }
-        if (r.steps) d.out.append(tableOf([T(['步驟', '代入數值', '結果'], ['Step', 'Numbers', 'Result'])].concat(r.steps), 'steps'));
+        if (r.steps) d.out.append(tableOf([['Step', 'Numbers', 'Result']].concat(r.steps), 'steps'));
         if (r.table) d.out.append(tableOf(r.table));
         if (r.note) d.out.append(el('p', { class: 'note', text: r.note }));
       } catch (e) {
         PR.errors.push(`demo-${id}: ${e.message}`);
-        d.out.append(el('p', { class: 'error', text: T('計算錯誤：', 'Computation error: ') + e.message }));
+        d.out.append(el('p', { class: 'error', text: 'Computation error: ' + e.message }));
       }
     }
 
@@ -807,7 +804,7 @@ dfn[data-term]{font-style:normal;font-weight:600;color:#f1f5f9;border-bottom:2px
       const row = el('div', { class: 'live-row' }), out = el('div', { class: 'live-out' });
       const draw = () => {
         try { out.innerHTML = PR.tex(spec.tex({ ...p }), true); }
-        catch (e) { PR.errors.push(`live ${name}: ${e.message}`); out.textContent = T('計算錯誤：', 'Computation error: ') + e.message; }
+        catch (e) { PR.errors.push(`live ${name}: ${e.message}`); out.textContent = 'Computation error: ' + e.message; }
       };
       (spec.controls || []).forEach(c => {
         p[c.key] = c.value;

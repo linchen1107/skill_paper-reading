@@ -7,8 +7,8 @@ the Chrome, Edge or Chromium already on the machine, and lets the page run every
 lab with its defaults and with one changed setting through the real endpoints.
 Then runs the backend's reference checks (@check), stops the backend and deletes
 the browser profile. Prints one line per lab:
-  通過     both settings computed without error, the results differ, the page rendered them
-  未通過   an error, identical results for different settings, or nothing rendered
+  Pass     both settings computed without error, the results differ, the page rendered them
+  Fail     an error, identical results for different settings, or nothing rendered
 Writes <topic>/studio/_work/verify/check_lab.json. Exit status 1 when anything fails.
 """
 import html
@@ -76,20 +76,20 @@ def main(topic_dir):
     (work / "verify" / "check_lab.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
     bad = 0
     for r in res["labs"]:
-        verdict = "通過" if r.get("ok") else "未通過"
+        verdict = "Pass" if r.get("ok") else "Fail"
         bad += not r.get("ok")
         why = []
         if r.get("error"):
-            why.append("錯誤: " + str(r["error"])[:120])
+            why.append("error: " + str(r["error"])[:120])
         if not r.get("changed", False):
-            why.append("兩組設定結果相同")
+            why.append("both settings gave the same result")
         if not r.get("rendered", False):
-            why.append("頁面沒有顯示結果")
-        print(f"{r['lab']}\t{verdict}\t方法 {r.get('methods', 0)} 個\t{'；'.join(why)}")
+            why.append("the page did not show a result")
+        print(f"{r['lab']}\t{verdict}\tmethods {r.get('methods', 0)}\t{'; '.join(why)}")
     for c in checks:
         bad += not c.get("ok")
-        print(f"對照\t{'通過' if c.get('ok') else '未通過'}\t{c['name']}\t{c.get('error', '')}")
-    print(f"{len(res['labs'])} 個實驗、{len(checks)} 個對照，{bad} 項未通過 -> {work / 'verify' / 'check_lab.json'}")
+        print(f"check\t{'Pass' if c.get('ok') else 'Fail'}\t{c['name']}\t{c.get('error', '')}")
+    print(f"{len(res['labs'])} labs, {len(checks)} checks, {bad} failures -> {work / 'verify' / 'check_lab.json'}")
     if bad:
         sys.exit(1)
 

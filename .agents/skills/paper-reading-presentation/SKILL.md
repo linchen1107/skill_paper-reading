@@ -11,7 +11,7 @@ Keep it small: one Python file, one lab page, 2 to 5 labs, no frontend framework
 
 ## Language
 
-The lab page template is in Traditional Chinese as used in Taiwan (the reading page is in English unless the user asked for Chinese); within the lab page use one language: lab titles, questions, control labels, summaries and notes; technical terms stay in English when that is clearer. Short declarative sentences: a number and its source instead of an adjective, no marketing words. Code and comments are in English. Replies to the user in chat are in Traditional Chinese (Taiwan).
+The lab page is in English, like the reading page: lab titles, questions, control labels, summaries and notes. Short declarative sentences: a number and its source instead of an adjective, no marketing words. Code and comments are in English. Replies to the user in chat are in Traditional Chinese (Taiwan).
 
 ## Input
 
@@ -50,7 +50,7 @@ If this plan has not already been approved, write no files yet; prior user autho
 
 1. Run `python <skill>/scripts/check_lab.py <topic>`. It starts the backend, lets the page run every lab with its defaults and with one changed setting, runs every `@check`, stops the backend and deletes its browser profile. Fix what fails and run it again.
 2. Start the backend for the user with `python <topic>/serve.py` (it starts `studio/server.py`, which serves the reading page and the labs at one address) and open the lab page in the user's default browser. In a remote session (`SSH_CONNECTION` set, or VS Code Remote) hand over an address the user's browser can open: `--host <tailscale ip -4>` when there is one, otherwise the `ssh -L` forwarding line the backend prints; never 127.0.0.1 alone.
-3. Begin the reply with a clickable link to the lab page, then: the port, how to stop the backend, the command that starts it again, and per lab what was operated, what it was checked against, and 通過 / 未通過 / 未驗收.
+3. Begin the reply with a clickable link to the lab page, then: the port, how to stop the backend, the command that starts it again, and per lab what was operated, what it was checked against, and Pass / Fail / Not checked.
 
 ## Usage budget
 
